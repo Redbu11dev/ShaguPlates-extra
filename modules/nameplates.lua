@@ -322,6 +322,11 @@ ShaguPlates:RegisterModule("nameplates", "vanilla:tbc", function ()
         plate.eventcache = true
       end
     end
+	
+	for plate in pairs(registry) do
+		--nameplates:OnDataChanged(plate)
+		plate.eventcache = true
+	end
 
     -- detect new nameplates
     parentcount = WorldFrame:GetNumChildren()
@@ -825,6 +830,10 @@ ShaguPlates:RegisterModule("nameplates", "vanilla:tbc", function ()
 			if (UnitFactionGroup("player") == UnitFactionGroup(unitstr)) and UnitIsPVP(unitstr) then
 				r, g, b, a = 0, 0.99999779462814, 0, 0.99999779462814
 			else
+				r, g, b, a = 0, 0, 0.99999779462814, 0.99999779462814
+			end
+		elseif not UnitCanAttack("player", unitstr) and UnitCanAttack(unitstr, "player") then
+			if (UnitFactionGroup("player") ~= UnitFactionGroup(unitstr)) and UnitIsPVP("player") then
 				r, g, b, a = 0, 0, 0.99999779462814, 0.99999779462814
 			end
 		end
