@@ -7,7 +7,8 @@ ShaguPlates:RegisterModule("nameplates", "vanilla:tbc", function ()
     ["NEUTRAL_NPC"] = { 1, 1, .3, .8 },
     ["FRIENDLY_NPC"] = { .6, 1, 0, .8 },
     ["ENEMY_PLAYER"] = { .9, .2, .3, .8 },
-    ["FRIENDLY_PLAYER"] = { .2, .6, 1, .8 }
+    ["FRIENDLY_PLAYER"] = { .2, .6, 1, .8 },
+	["NEUTRAL_PLAYER"] = { 1, 1, .3, .8 }
   }
 
   local combatstate = {
@@ -389,24 +390,36 @@ ShaguPlates:RegisterModule("nameplates", "vanilla:tbc", function ()
     nameplate:SetScale(UIParent:GetScale())
 
     nameplate.health = CreateFrame("StatusBar", nil, nameplate)
-    nameplate.health:SetFrameLevel(4) -- keep above glow
+    nameplate.health:SetFrameLevel(1) -- keep above glow
     nameplate.health.text = nameplate.health:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    nameplate.health.text:SetAllPoints()
+    --nameplate.health.text:SetAllPoints()
+	nameplate.health.text:SetPoint("RIGHT", nameplate.health, "RIGHT", -2, -8)
     nameplate.health.text:SetTextColor(1,1,1,1)
 
     nameplate.name = nameplate:CreateFontString(nil, "OVERLAY")
     nameplate.name:SetPoint("TOP", nameplate, "TOP", 0, 0)
 
     nameplate.glow = nameplate:CreateTexture(nil, "BACKGROUND")
-    nameplate.glow:SetPoint("CENTER", nameplate.health, "CENTER", 0, 0)
-    nameplate.glow:SetTexture(ShaguPlates.media["img:dot"])
+    nameplate.glow:SetPoint("LEFT", nameplate.health, "LEFT", -30, 0)
+    nameplate.glow:SetTexture(ShaguPlates.media["img:arrow_left"])
+	--nameplate.glow:SetFrameLevel(1)
+	nameplate.glow:SetDrawLayer("BACKGROUND")
     nameplate.glow:Hide()
+	
+	nameplate.glow2 = nameplate:CreateTexture(nil, "BACKGROUND")
+    nameplate.glow2:SetPoint("RIGHT", nameplate.health, "RIGHT", 30, 0)
+    nameplate.glow2:SetTexture(ShaguPlates.media["img:arrow_right"])
+	--nameplate.glow:SetFrameLevel(1)
+	nameplate.glow2:SetDrawLayer("BACKGROUND")
+	--nameplate.glow2.texture:SetRotation(2)
+    nameplate.glow2:Hide()
 
     nameplate.guild = nameplate:CreateFontString(nil, "OVERLAY")
     nameplate.guild:SetPoint("BOTTOM", nameplate.health, "BOTTOM", 0, 0)
 
     nameplate.level = nameplate:CreateFontString(nil, "OVERLAY")
     nameplate.level:SetPoint("RIGHT", nameplate.health, "LEFT", -3, 0)
+	nameplate.level:SetDrawLayer("OVERLAY")
 
     nameplate.raidicon:SetParent(nameplate.health)
     nameplate.raidicon:SetDrawLayer("OVERLAY")
@@ -535,9 +548,13 @@ ShaguPlates:RegisterModule("nameplates", "vanilla:tbc", function ()
 
     nameplate.guild:SetFont(font, font_size, font_style)
 
-    nameplate.glow:SetWidth(C.nameplates.width + 60)
-    nameplate.glow:SetHeight(C.nameplates.heighthealth + 30)
+    nameplate.glow:SetWidth(30)
+    nameplate.glow:SetHeight(30)
     nameplate.glow:SetVertexColor(glowr, glowg, glowb, glowa)
+	
+	nameplate.glow2:SetWidth(30)
+    nameplate.glow2:SetHeight(30)
+    nameplate.glow2:SetVertexColor(glowr, glowg, glowb, glowa)
 
     nameplate.raidicon:ClearAllPoints()
     nameplate.raidicon:SetPoint(C.nameplates.raidiconpos, nameplate.health, C.nameplates.raidiconpos, C.nameplates.raidiconoffx, C.nameplates.raidiconoffy)
@@ -614,7 +631,13 @@ ShaguPlates:RegisterModule("nameplates", "vanilla:tbc", function ()
       plate.cache.player = UnitIsPlayer(unitstr) and "PLAYER" or "NPC"
     end
 
-    if player and unittype == "ENEMY_NPC" then unittype = "ENEMY_PLAYER" end
+    --if player and unittype == "ENEMY_NPC" then unittype = "ENEMY_PLAYER" end
+	
+	if player and unittype == "ENEMY_NPC" then 
+		unittype = "ENEMY_PLAYER" 
+	end
+	
+	
     elite = plate.original.levelicon:IsShown() and not player and "boss" or elite
     if not class then plate.wait_for_scan = true end
 
@@ -638,7 +661,11 @@ ShaguPlates:RegisterModule("nameplates", "vanilla:tbc", function ()
     plate:Show()
 
     if target and C.nameplates.targetglow == "1" then
-      plate.glow:Show() else plate.glow:Hide()
+      plate.glow:Show() 
+	  plate.glow2:Show() 
+	  else 
+	  plate.glow:Hide()
+	  plate.glow2:Hide()
     end
 
     -- target indicator
@@ -673,6 +700,7 @@ ShaguPlates:RegisterModule("nameplates", "vanilla:tbc", function ()
       plate.totem.icon:SetTexture("Interface\\Icons\\" .. TotemIcon)
 
       plate.glow:Hide()
+	  plate.glow2:Hide()
       plate.level:Hide()
       plate.name:Hide()
       plate.health:Hide()
@@ -693,7 +721,7 @@ ShaguPlates:RegisterModule("nameplates", "vanilla:tbc", function ()
       end
       plate.totem:Hide()
     else
-      plate.level:SetPoint("RIGHT", plate.health, "LEFT", -5, 0)
+      plate.level:SetPoint("RIGHT", plate.health, "LEFT", 22, -8)
       plate.name:SetParent(plate.health)
       plate.guild:SetPoint("BOTTOM", plate.health, "BOTTOM", 0, -(font_size + 4))
 
@@ -774,10 +802,40 @@ ShaguPlates:RegisterModule("nameplates", "vanilla:tbc", function ()
         r, g, b, a = color.r, color.g, color.b, color.a
       end
     end
+	
+	redx, greenx, bluex = plate.original.healthbar:GetStatusBarColor()	
+	r, g, b, a = redx, greenx, bluex, a
+	
+	--local unittype = GetUnitType(red, green, blue) or "ENEMY_NPC"
+	
+	--if player and unittype == "ENEMY_NPC" then 
+	if UnitIsPlayer(unitstr) and not (UnitInRaid(unitstr) or UnitInParty(unitstr)) then 
+		--r, g, b = UnitSelectionColor(unitstr)
+		--r, g, b, a = UnitSelectionColor(unitstr)	
+		
+		--print(name)
+		--print(UnitIsPVP(unitstr))
+		--print(UnitCanAttack("player", unitstr))
+
+		--r, g, b = 1, 1, 0
+		
+		if UnitCanAttack("player", unitstr) and not UnitCanAttack(unitstr, "player") then
+			r, g, b, a = 1, 1, 0, 0.99999779462814
+		elseif not UnitCanAttack("player", unitstr) and not UnitCanAttack(unitstr, "player") then
+			if (UnitFactionGroup("player") == UnitFactionGroup(unitstr)) and UnitIsPVP(unitstr) then
+				r, g, b, a = 0, 0.99999779462814, 0, 0.99999779462814
+			else
+				r, g, b, a = 0, 0, 0.99999779462814, 0.99999779462814
+			end
+		end
+		
+	end
+
+	plate.health:SetStatusBarColor(r, g, b, a)
 
     if r ~= plate.cache.r or g ~= plate.cache.g or b ~= plate.cache.b then
-      plate.health:SetStatusBarColor(r, g, b, a)
-      plate.cache.r, plate.cache.g, plate.cache.b = r, g, b
+     plate.health:SetStatusBarColor(r, g, b, a)
+     plate.cache.r, plate.cache.g, plate.cache.b = r, g, b
     end
 
     if r + g + b ~= plate.cache.namecolor and unittype == "FRIENDLY_PLAYER" and C.nameplates["friendclassnamec"] == "1" and class and RAID_CLASS_COLORS[class] then

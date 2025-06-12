@@ -674,7 +674,8 @@ ShaguPlates:RegisterModule("gui", "vanilla:tbc", function ()
         "Interface\\AddOns\\ShaguPlates\\fonts\\Hooge.ttf:Hooge",
         "Interface\\AddOns\\ShaguPlates\\fonts\\Myriad-Pro.ttf:Myriad-Pro",
         "Interface\\AddOns\\ShaguPlates\\fonts\\PT-Sans-Narrow-Bold.ttf:PT-Sans-Narrow-Bold",
-        "Interface\\AddOns\\ShaguPlates\\fonts\\PT-Sans-Narrow-Regular.ttf:PT-Sans-Narrow-Regular"
+        "Interface\\AddOns\\ShaguPlates\\fonts\\PT-Sans-Narrow-Regular.ttf:PT-Sans-Narrow-Regular",
+		"Interface\\AddOns\\ShaguPlates\\fonts\\francois.ttf:francois",
       },
       ["border"] = {
         "-1:" .. T["Default"],
