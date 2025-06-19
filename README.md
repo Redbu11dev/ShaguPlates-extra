@@ -1,3 +1,5 @@
+(!) Rename folder to "ShaguPlates" for now (!)
+
 ShaguPlates, but restyled and with extra stuff
 
 
