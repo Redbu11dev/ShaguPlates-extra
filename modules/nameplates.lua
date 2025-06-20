@@ -841,6 +841,10 @@ nameplates.OnCreate = function(frame)
 
 	-- remove unitstr on unit name mismatch
 	if unitstr and UnitName(unitstr) ~= name then unitstr = nil end
+	
+	if (unitstr == nil) then
+		unitstr = plate.parent:GetName(1)
+	end
 
 	-- use mobhealth values if addon is running
 	if (MobHealth3 or MobHealthFrame) and target and name == UnitName('target') and MobHealth_GetTargetCurHP() then
@@ -1030,9 +1034,10 @@ nameplates.OnCreate = function(frame)
 	--local unittype = GetUnitType(red, green, blue) or "ENEMY_NPC"
 
 	--if player and unittype == "ENEMY_NPC" then 
-	if (unitstr ~= nil) then	
-	
-	local playerCanAttackUnit = UnitCanAttack("player", unitstr)
+	if (unitstr == nil) then
+		
+	else	
+		local playerCanAttackUnit = UnitCanAttack("player", unitstr)
 		if plate.OnEnterScript == nil then
 			local scrf = function()
 				if not IsMouselooking() then
