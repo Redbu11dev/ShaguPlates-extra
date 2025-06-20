@@ -378,6 +378,7 @@
 	nameplates:RegisterEvent("UNIT_COMBO_POINTS")
 	nameplates:RegisterEvent("PLAYER_COMBO_POINTS")
 	nameplates:RegisterEvent("UNIT_AURA")
+	-- nameplates:RegisterEvent("CHAT_MSG_ADDON")
 
 	nameplates:SetScript("OnEvent", function()
 	if event == "PLAYER_ENTERING_WORLD" then
@@ -385,6 +386,17 @@
 	else
 	  this.eventcache = true
 	end
+	
+	-- if event == "CHAT_MSG_ADDON" and string.find(arg2, "TWTv4=", 1, true) then
+		-- --me.processthreatupdate(arg2)
+		-- --return 
+		-- print("yessssss")
+	-- else
+		-- --print("yessssss0")
+		-- SendAddonMessage("TWT_UDTSv4", "limit=" .. 5, "PARTY")
+		-- --print("yessssss1")
+	-- end
+	
 	end)
 
 	nameplates:SetScript("OnUpdate", function()
@@ -447,7 +459,7 @@
 	end
 	end)
 
-	nameplates.OnCreate = function(frame)
+nameplates.OnCreate = function(frame)
 	local parent = frame or this
 	platecount = platecount + 1
 	platename = "pfNamePlate" .. platecount
@@ -455,7 +467,7 @@
 	-- create ShaguPlates nameplate overlay
 	local nameplate = CreateFrame("Button", platename, parent)
 	nameplate.platename = platename
-	nameplate:EnableMouse(0)
+	--nameplate:EnableMouse(0)
 	nameplate.parent = parent
 	nameplate.cache = {}
 	nameplate.UnitDebuff = PlateUnitDebuff
@@ -510,7 +522,7 @@
 	nameplate.classIcon.icon:SetAllPoints()
 	--nameplate.typeIcon.icon:SetTexture("Interface\\Icons\\" .. "spell_holy_sealofsalvation.blp")
 	nameplate.classIcon.icon:SetTexture("Interface\\AddOns\\ShaguPlates\\img\\classicons\\UNKNOWN.tga")
-	nameplate.classIcon:Show()
+	nameplate.classIcon:Hide()
 
 	nameplate.typeIcon = CreateFrame("Frame", nil, nameplate)
 	nameplate.typeIcon:SetFrameLevel(1)
@@ -539,6 +551,12 @@
 	nameplate.glow2:SetDrawLayer("BACKGROUND")
 	--nameplate.glow2.texture:SetRotation(2)
 	nameplate.glow2:Hide()
+	
+	nameplate.selectionGlow = nameplate:CreateTexture(nil, "BACKGROUND")
+	nameplate.selectionGlow:SetPoint("CENTER", nameplate.health, "CENTER", 0, 0)
+	nameplate.selectionGlow:SetTexture(ShaguPlates.media["img:dot"])
+	nameplate.selectionGlow:SetDrawLayer("BACKGROUND")
+	nameplate.selectionGlow:Hide()
 
 	nameplate.level = nameplate:CreateFontString(nil, "OVERLAY")
 	nameplate.level:SetPoint("LEFT", nameplate.health, "LEFT", 3, -8)
@@ -582,6 +600,20 @@
 	nameplate.totem.icon:SetAllPoints()
 	CreateBackdrop(nameplate.totem)
 	--nameplate.totem:Show()
+	
+	
+	nameplate:SetScript("OnLeave", function()
+		GameTooltip:Hide()
+		nameplate.selectionGlow:Hide()
+		local r,g,b = nameplate.original.name:GetTextColor()
+		nameplate.name:SetTextColor(r,g,b, 1)
+    end)
+	
+	nameplate:SetScript("OnMouseUp", function()
+		if MouseIsOver(nameplate) then
+			parent:Click(arg1)
+		end
+	end)
 
 	do -- debuffs
 	  nameplate.debuffs = {}
@@ -704,6 +736,8 @@
 	nameplate.health.text:SetJustifyH(nameplatesHptextpos)
 
 	nameplate.guild:SetFont(font, font_size, font_style)
+	
+    nameplate.selectionGlow:SetVertexColor(glowr, glowg, glowb, 0.5)
 
 	nameplate.glow:SetWidth(30)
 	nameplate.glow:SetHeight(30)
@@ -997,14 +1031,43 @@
 
 	--if player and unittype == "ENEMY_NPC" then 
 	if (unitstr ~= nil) then	
+	
+	local playerCanAttackUnit = UnitCanAttack("player", unitstr)
+		if plate.OnEnterScript == nil then
+			local scrf = function()
+				if not IsMouselooking() then
+					if playerCanAttackUnit then
+						SetCursor("ATTACK_CURSOR")
+					end
+			
+					GameTooltip_SetDefaultAnchor(GameTooltip, UIParent)
+					GameTooltip:SetUnit(unitstr)
+					GameTooltip:Show()
+					
+					plate.selectionGlow:Show()
+					
+					plate.name:SetTextColor(1,1,0,1)
+				end
+			end
+			plate:SetScript("OnEnter", scrf)
+		end
+		-- plate:SetScript("OnEnter", function()			
+			-- GameTooltip_SetDefaultAnchor(GameTooltip, UIParent)
+			-- GameTooltip:SetUnit(unitstr)
+			-- GameTooltip:Show()
+		-- end)
+	
 		plate.health:SetWidth(nameplateWidth)
 		plate.health:SetHeight(nameplatesHeighthealth)
 		
 		plate.typeIcon:SetHeight(nameplatesHeighthealth)
 		plate.typeIcon:SetWidth(nameplatesHeighthealth)
 		
+		plate.selectionGlow:SetWidth(nameplateWidth + 60)
+		plate.selectionGlow:SetHeight(nameplatesHeighthealth + 60)
+		
 		if not player then
-			plate.classIcon.icon:Hide()
+			plate.classIcon:Hide()
 			local creatureType = UnitCreatureType(unitstr)
 			if creatureType then
 				plate.typeIcon.icon:SetTexture("Interface\\AddOns\\ShaguPlates\\img\\creaturetypes\\"..string.upper(UnitCreatureType(unitstr))..".tga")
@@ -1014,9 +1077,14 @@
 					plate.health:SetHeight(nameplatesHeighthealthCritter)
 					plate.typeIcon:SetHeight(nameplatesHeighthealthCritter)
 					plate.typeIcon:SetWidth(nameplatesHeighthealthCritter)
+					
+					plate.selectionGlow:SetWidth(nameplateWidthCritter + 60)
+					plate.selectionGlow:SetHeight(nameplatesHeighthealthCritter + 60)
 				else
 					if isGrayLevel then
 						plate.health:SetWidth(nameplateWidthGrayLevel)
+						
+						plate.selectionGlow:SetWidth(nameplateWidthGrayLevel + 60)
 					end
 				end
 			else
@@ -1029,7 +1097,7 @@
 			end
 			plate.classIcon.icon:SetTexture("Interface\\AddOns\\ShaguPlates\\img\\classicons\\"..string.upper(class)..".tga")
 			plate.classIcon.icon:SetTexCoord(.078, .92, .079, .937)
-			plate.classIcon.icon:Show()
+			plate.classIcon:Show()
 			
 			local race, raceEn = UnitRace(unitstr)
 			--print(name)
@@ -1053,7 +1121,7 @@
 
 				--r, g, b = 1, 1, 0
 				
-				local playerCanAttackUnit = UnitCanAttack("player", unitstr)
+				--local playerCanAttackUnit = UnitCanAttack("player", unitstr)
 				local unitCanAttackPlayer = UnitCanAttack(unitstr, "player")
 				local playerFaction = UnitFactionGroup("player")
 				local unitFaction = UnitFactionGroup(unitstr)
@@ -1374,15 +1442,19 @@
 			-- this:SetHeight(10)
 		-- end
 		
-		if (GetActivePlateCount() > 10) then
-			this:SetWidth(10)
-			this:SetHeight(10)
-		else
-			if this:GetWidth() == 10 and this:GetHeight() == 10 then
-				this:SetWidth(80)
-				this:SetHeight(10)
-			end
-		end
+		--if (GetActivePlateCount() > 10) then
+		-- if (GetActivePlateCount() > 1) then
+			-- this:SetWidth(10)
+			-- this:SetHeight(10)
+		-- else
+			-- if this:GetWidth() == 10 and this:GetHeight() == 10 then
+				-- this:SetWidth(80)
+				-- this:SetHeight(10)
+			-- end
+		-- end
+		
+		this:SetWidth(1)
+		this:SetHeight(1)
 		
 		--this.nameplate:SetPoint("BOTTOM", this, "TOP", 0, 0)
 		
