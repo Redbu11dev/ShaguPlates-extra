@@ -1,5 +1,7 @@
 (!) Rename folder to "ShaguPlates" for now (!)
 
+REQUIRES SUPERWOW https://github.com/balakethelock/SuperWoW
+
 ShaguPlates, but restyled and with extra stuff
 
 
