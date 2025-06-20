@@ -607,6 +607,8 @@ nameplates.OnCreate = function(frame)
 		nameplate.selectionGlow:Hide()
 		local r,g,b = nameplate.original.name:GetTextColor()
 		nameplate.name:SetTextColor(r,g,b, 1)
+		
+		nameplate.isInMouseOver = false
     end)
 	
 	nameplate:SetScript("OnMouseUp", function()
@@ -1052,6 +1054,11 @@ nameplates.OnCreate = function(frame)
 					plate.selectionGlow:Show()
 					
 					plate.name:SetTextColor(1,1,0,1)
+					
+					-- plate:SetFrameStrata("LOW")
+					-- plate.target_strata = 1
+					
+					plate.isInMouseOver = true
 				end
 			end
 			plate:SetScript("OnEnter", scrf)
@@ -1256,10 +1263,10 @@ nameplates.OnCreate = function(frame)
 	end
 
 	-- keep target nameplate above others
-	if target and nameplate.target_strata ~= 1 then
+	if (target or nameplate.isInMouseOver) and nameplate.target_strata ~= 1 then
 	  nameplate:SetFrameStrata("LOW")
 	  nameplate.target_strata = 1
-	elseif not target and nameplate.target_strata ~= 0 then
+	elseif (not target and not nameplate.isInMouseOver) and nameplate.target_strata ~= 0 then
 	  nameplate:SetFrameStrata("BACKGROUND")
 	  nameplate.target_strata = 0
 	end
