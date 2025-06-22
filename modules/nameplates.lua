@@ -378,7 +378,7 @@
 	nameplates:RegisterEvent("UNIT_COMBO_POINTS")
 	nameplates:RegisterEvent("PLAYER_COMBO_POINTS")
 	nameplates:RegisterEvent("UNIT_AURA")
-	-- nameplates:RegisterEvent("CHAT_MSG_ADDON")
+	nameplates:RegisterEvent("CHAT_MSG_ADDON")
 
 	nameplates:SetScript("OnEvent", function()
 	if event == "PLAYER_ENTERING_WORLD" then
@@ -387,15 +387,15 @@
 	  this.eventcache = true
 	end
 	
-	-- if event == "CHAT_MSG_ADDON" and string.find(arg2, "TWTv4=", 1, true) then
-		-- --me.processthreatupdate(arg2)
-		-- --return 
-		-- print("yessssss")
-	-- else
-		-- --print("yessssss0")
-		-- SendAddonMessage("TWT_UDTSv4", "limit=" .. 5, "PARTY")
-		-- --print("yessssss1")
-	-- end
+	if event == "CHAT_MSG_ADDON" and string.find(arg2, "TWTv4=", 1, true) then
+		--me.processthreatupdate(arg2)
+		--return 
+		--print("yessssss")
+	else
+		--print("yessssss0")
+		SendAddonMessage("TWT_UDTSv4", "limit=" .. 5, "PARTY")
+		--print("yessssss1")
+	end
 	
 	end)
 
@@ -585,6 +585,18 @@ nameplates.OnCreate = function(frame)
 	nameplate.rarityIconR.icon:SetAllPoints()
 	nameplate.rarityIconR.icon:SetTexture("Interface\\AddOns\\ShaguPlates\\img\\frame_elite")
 	nameplate.rarityIconR:Hide()
+	
+	nameplate.combatIcon = CreateFrame("Frame", nil, nameplate)
+	nameplate.combatIcon:SetFrameLevel(0)
+	nameplate.combatIcon:SetPoint("LEFT", nameplate.name, "RIGHT", -0, -0)
+	nameplate.combatIcon:SetHeight(20)
+	nameplate.combatIcon:SetWidth(20)
+	nameplate.combatIcon.icon = nameplate.combatIcon:CreateTexture(nil, "OVERLAY")
+	--nameplate.rarityIconR.icon:SetTexCoord(1, 0, 0, 1)
+	--nameplate.combatIcon.icon:SetVertexColor(1, 1, 0, 1)
+	nameplate.combatIcon.icon:SetAllPoints()
+	nameplate.combatIcon.icon:SetTexture("Interface\\AddOns\\ShaguPlates\\img\\combat\\swords_combat_2")
+	nameplate.combatIcon:Hide()
 
 	nameplate.raidicon:SetParent(nameplate.health)
 	nameplate.raidicon:SetDrawLayer("OVERLAY")
@@ -1037,8 +1049,16 @@ nameplates.OnCreate = function(frame)
 
 	--if player and unittype == "ENEMY_NPC" then 
 	if (unitstr == nil) then
+		-- unitstr is null
+	else
 		
-	else	
+		if (UnitAffectingCombat(unitstr)) then
+			--nameplate.combatIcon.icon:SetTexture("Interface\\AddOns\\ShaguPlates\\img\\combat\\sword_and_shield")
+			plate.combatIcon:Show()
+		else
+			plate.combatIcon:Hide()
+		end
+		
 		local playerCanAttackUnit = UnitCanAttack("player", unitstr)
 		if plate.OnEnterScript == nil then
 			local scrf = function()
@@ -1103,6 +1123,10 @@ nameplates.OnCreate = function(frame)
 				plate.typeIcon.icon:SetTexture("Interface\\AddOns\\ShaguPlates\\img\\creaturetypes\\UNKNOWN.tga")
 			end
 			plate.typeIcon.icon:SetTexCoord(.078, .92, .079, .937)
+			
+			if UnitIsTapped(unitstr) and not UnitIsTappedByPlayer(unitstr) then
+			  r, g, b, a = .5, .5, .5, .8
+			end
 		else
 			if isGrayLevel then
 				plate.health:SetWidth(nameplateWidthGrayLevel)
