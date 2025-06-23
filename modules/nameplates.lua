@@ -64,6 +64,8 @@
 	local nameplateWidth = 115
 	local nameplatesHeighthealth = 14
 	local nameplatesHeightcast = 8
+	
+	local nameplatesHeightPower = 7
 
 	local nameplatesHealthOffset = 3
 	local nameplatesVerticalhealth = false
@@ -378,7 +380,7 @@
 	nameplates:RegisterEvent("UNIT_COMBO_POINTS")
 	nameplates:RegisterEvent("PLAYER_COMBO_POINTS")
 	nameplates:RegisterEvent("UNIT_AURA")
-	nameplates:RegisterEvent("CHAT_MSG_ADDON")
+	--nameplates:RegisterEvent("CHAT_MSG_ADDON")
 
 	nameplates:SetScript("OnEvent", function()
 	if event == "PLAYER_ENTERING_WORLD" then
@@ -387,15 +389,15 @@
 	  this.eventcache = true
 	end
 	
-	if event == "CHAT_MSG_ADDON" and string.find(arg2, "TWTv4=", 1, true) then
-		--me.processthreatupdate(arg2)
-		--return 
-		--print("yessssss")
-	else
-		--print("yessssss0")
-		SendAddonMessage("TWT_UDTSv4", "limit=" .. 5, "PARTY")
-		--print("yessssss1")
-	end
+	-- if event == "CHAT_MSG_ADDON" and string.find(arg2, "TWTv4=", 1, true) then
+		-- --me.processthreatupdate(arg2)
+		-- --return 
+		-- --print("yessssss")
+	-- else
+		-- --print("yessssss0")
+		-- SendAddonMessage("TWT_UDTSv4", "limit=" .. 5, "PARTY")
+		-- --print("yessssss1")
+	-- end
 	
 	end)
 
@@ -499,8 +501,23 @@ nameplates.OnCreate = function(frame)
 	nameplate.health:SetFrameLevel(1) -- keep above glow
 	nameplate.health.text = nameplate.health:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 	--nameplate.health.text:SetAllPoints()
-	nameplate.health.text:SetPoint("RIGHT", nameplate.health, "RIGHT", -2, -8)
+	nameplate.health.text:SetPoint("RIGHT", nameplate.health, "RIGHT", -2, -4)
 	nameplate.health.text:SetTextColor(1,1,1,1)
+	
+	nameplate.power = CreateFrame("StatusBar", nil, nameplate)
+	nameplate.power:SetFrameLevel(1) -- keep above glow
+	nameplate.power:SetOrientation("HORIZONTAL")
+	nameplate.power:SetPoint("TOP", nameplate.health, "BOTTOM", 0, 0)
+	nameplate.power:SetStatusBarTexture("Interface\\AddOns\\ShaguPlates\\img\\statusbar\\XPerl_StatusBar7")
+	nameplate.power.hlr, nameplate.power.hlg, nameplate.power.hlb, nameplate.power.hla = 1, 1, 1, 1
+	nameplate.power.text = nameplate.power:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+	nameplate.power.text:SetFont(ShaguPlates.font_unit, 8, "OUTLINE")
+	nameplate.power.text:SetJustifyH(nameplatesHptextpos)
+	--nameplate.health.text:SetAllPoints()
+	nameplate.power.text:SetPoint("RIGHT", nameplate.power, "RIGHT", -2, -4)
+	nameplate.power.text:SetTextColor(1,1,1,1)
+	local rawborderx, default_borderx = GetBorderSize("nameplates")
+	CreateBackdrop(nameplate.power, default_borderx)
 
 	nameplate.guild = nameplate:CreateFontString(nil, "OVERLAY")
 	--nameplate.guild:SetPoint("BOTTOM", nameplate.health, "BOTTOM", 0, 0)
@@ -597,6 +614,16 @@ nameplates.OnCreate = function(frame)
 	nameplate.combatIcon.icon:SetAllPoints()
 	nameplate.combatIcon.icon:SetTexture("Interface\\AddOns\\ShaguPlates\\img\\combat\\swords_combat_2")
 	nameplate.combatIcon:Hide()
+	
+	-- nameplate.attackIcon = CreateFrame("Frame", nil, nameplate)
+	-- nameplate.attackIcon:SetFrameLevel(0)
+	-- nameplate.attackIcon:SetPoint("RIGHT", nameplate.health, "LEFT", -10, -0)
+	-- nameplate.attackIcon:SetHeight(25)
+	-- nameplate.attackIcon:SetWidth(25)
+	-- nameplate.attackIcon.icon = nameplate.attackIcon:CreateTexture(nil, "OVERLAY")
+	-- nameplate.attackIcon.icon:SetAllPoints()
+	-- nameplate.attackIcon.icon:SetTexture("Interface\\AddOns\\ShaguPlates\\img\\combat\\swords_combat_2")
+	-- nameplate.attackIcon:Hide()
 
 	nameplate.raidicon:SetParent(nameplate.health)
 	nameplate.raidicon:SetDrawLayer("OVERLAY")
@@ -778,8 +805,8 @@ nameplates.OnCreate = function(frame)
 	  CreateBackdrop(nameplate.combopoints[i], default_border)
 	end
 
-	nameplate.castbar:SetPoint("TOPLEFT", nameplate.health, "BOTTOMLEFT", 0, -default_border*3)
-	nameplate.castbar:SetPoint("TOPRIGHT", nameplate.health, "BOTTOMRIGHT", 0, -default_border*3)
+	nameplate.castbar:SetPoint("TOPLEFT", nameplate.power, "BOTTOMLEFT", 0, -default_border*3)
+	nameplate.castbar:SetPoint("TOPRIGHT", nameplate.power, "BOTTOMRIGHT", 0, -default_border*3)
 	nameplate.castbar:SetHeight(nameplatesHeightcast)
 	nameplate.castbar:SetStatusBarTexture(hptexture)
 	nameplate.castbar:SetStatusBarColor(.9,.8,0,1)
@@ -788,8 +815,9 @@ nameplates.OnCreate = function(frame)
 	nameplate.castbar.text:SetFont(font, font_size, "OUTLINE")
 	nameplate.castbar.spell:SetFont(font, font_size, "OUTLINE")
 	nameplate.castbar.icon:SetPoint("BOTTOMLEFT", nameplate.castbar, "BOTTOMRIGHT", default_border*3, 0)
-	nameplate.castbar.icon:SetPoint("TOPLEFT", nameplate.health, "TOPRIGHT", default_border*3, 0)
+	--nameplate.castbar.icon:SetPoint("TOPLEFT", nameplate.health, "TOPRIGHT", default_border*3, 0)
 	nameplate.castbar.icon:SetWidth(nameplatesHeightcast + default_border*3 + nameplatesHeighthealth)
+	nameplate.castbar.icon:SetHeight(nameplatesHeightcast + default_border*3 + nameplatesHeighthealth)
 	CreateBackdrop(nameplate.castbar.icon, default_border)
 
 	nameplates:OnDataChanged(nameplate)
@@ -879,13 +907,25 @@ nameplates.OnCreate = function(frame)
 	local isGrayLevel = difficultyColor.r == 0.5 and difficultyColor.g == 0.5 and difficultyColor.b == 0.5
 
 	--guild = GetGuildInfo(unitstr)
-
-	if target and nameplatesTargetglow then
-	  plate.glow:Show() 
-	  plate.glow2:Show() 
-	  else 
-	  plate.glow:Hide()
-	  plate.glow2:Hide()
+	
+	if target then
+		if nameplatesTargetglow then
+		  plate.glow:Show() 
+		  plate.glow2:Show()
+		else 
+		  plate.glow:Hide()
+		  plate.glow2:Hide()
+		end
+		
+		-- if IsCurrentSpell(8386) then
+			-- plate.attackIcon:Show()
+		-- else
+			-- plate.attackIcon:Hide()
+		-- end
+	else
+		plate.glow:Hide()
+		plate.glow2:Hide()
+		--plate.attackIcon:Hide()
 	end
 
 	-- target indicator
@@ -898,12 +938,15 @@ nameplates.OnCreate = function(frame)
 
 	  -- set border color
 	  plate.health.backdrop:SetBackdropBorderColor(color.r, color.g, color.b, color.a)
+	  plate.power.backdrop:SetBackdropBorderColor(color.r, color.g, color.b, color.a)
 	  plate.typeIcon.backdrop:SetBackdropBorderColor(color.r, color.g, color.b, color.a)
 	elseif target and nameplatesTargethighlight then
 	  plate.health.backdrop:SetBackdropBorderColor(plate.health.hlr, plate.health.hlg, plate.health.hlb, plate.health.hla)
+	  plate.power.backdrop:SetBackdropBorderColor(plate.health.hlr, plate.health.hlg, plate.health.hlb, plate.health.hla)
 	  plate.typeIcon.backdrop:SetBackdropBorderColor(plate.health.hlr, plate.health.hlg, plate.health.hlb, plate.health.hla)
 	else
 	  plate.health.backdrop:SetBackdropBorderColor(er,eg,eb,ea)
+	  plate.power.backdrop:SetBackdropBorderColor(er,eg,eb,ea)
 	  plate.typeIcon.backdrop:SetBackdropBorderColor(er,eg,eb,ea)
 	end
 
@@ -1092,6 +1135,9 @@ nameplates.OnCreate = function(frame)
 		plate.health:SetWidth(nameplateWidth)
 		plate.health:SetHeight(nameplatesHeighthealth)
 		
+		plate.power:SetWidth(nameplateWidth)
+		plate.power:SetHeight(nameplatesHeightPower)
+		
 		plate.typeIcon:SetHeight(nameplatesHeighthealth)
 		plate.typeIcon:SetWidth(nameplatesHeighthealth)
 		
@@ -1109,12 +1155,14 @@ nameplates.OnCreate = function(frame)
 					plate.health:SetHeight(nameplatesHeighthealthCritter)
 					plate.typeIcon:SetHeight(nameplatesHeighthealthCritter)
 					plate.typeIcon:SetWidth(nameplatesHeighthealthCritter)
+					plate.power:SetWidth(nameplateWidthCritter)
 					
 					plate.selectionGlow:SetWidth(nameplateWidthCritter + 60)
 					plate.selectionGlow:SetHeight(nameplatesHeighthealthCritter + 60)
 				else
 					if isGrayLevel then
 						plate.health:SetWidth(nameplateWidthGrayLevel)
+						plate.power:SetWidth(nameplateWidthGrayLevel)
 						
 						plate.selectionGlow:SetWidth(nameplateWidthGrayLevel + 60)
 					end
@@ -1130,6 +1178,7 @@ nameplates.OnCreate = function(frame)
 		else
 			if isGrayLevel then
 				plate.health:SetWidth(nameplateWidthGrayLevel)
+				plate.power:SetWidth(nameplateWidthGrayLevel)
 			end
 			plate.classIcon.icon:SetTexture("Interface\\AddOns\\ShaguPlates\\img\\classicons\\"..string.upper(class)..".tga")
 			plate.classIcon.icon:SetTexCoord(.078, .92, .079, .937)
@@ -1183,6 +1232,40 @@ nameplates.OnCreate = function(frame)
 		for i=1,16 do
 		  UpdateDebuffConfig(plate, i)
 		end
+	end
+	
+	local unitMaxPower = UnitManaMax(unitstr)
+	
+	if unitMaxPower > 0 then
+		local unitPower = UnitMana(unitstr)
+		plate.power.text:SetText(string.format("%s", Abbreviate(unitPower)))
+		
+		local unitPowerType = UnitPowerType(unitstr)
+	
+		if unitPowerType == 0 then
+			plate.power:SetStatusBarColor(0, 0, 1, a)
+		elseif unitPowerType == 1 then
+			plate.power:SetStatusBarColor(1, 0, 0, a)
+		elseif unitPowerType == 2 or unitPowerType == 3 then
+			plate.power:SetStatusBarColor(1, 1, 0, a)
+		else
+			plate.power:SetStatusBarColor(1, 1, 0, a)
+		end
+		
+		plate.power:SetMinMaxValues(0,  unitMaxPower)
+		
+		if unitPowerType == 1 and unitPower < 1 then
+			plate.power:SetValue(unitMaxPower)
+			plate.power:SetStatusBarColor(1, 0.3, 0, a)
+		else
+			plate.power:SetValue(unitPower)
+		end
+		
+		plate.health.text:SetPoint("RIGHT", plate.health, "RIGHT", -2, -4)
+		plate.power:Show()
+	else
+		plate.health.text:SetPoint("RIGHT", plate.health, "RIGHT", -2, -8)
+		plate.power:Hide()
 	end
 
 	plate.health:SetStatusBarColor(r, g, b, a)
