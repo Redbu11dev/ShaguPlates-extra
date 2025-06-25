@@ -460,6 +460,16 @@ function HookScript(f, script, func)
   end)
 end
 
+-- function GetScript(f, script)
+  -- local prev = f:GetScript(script)
+  -- return prev
+  
+  -- -- f:SetScript(script, function(a1,a2,a3,a4,a5,a6,a7,a8,a9)
+    -- -- if prev then prev(a1,a2,a3,a4,a5,a6,a7,a8,a9) end
+    -- -- func(a1,a2,a3,a4,a5,a6,a7,a8,a9)
+  -- -- end)
+-- end
+
 -- [ HookAddonOrVariable ]
 -- Sets a function to be called automatically once an addon gets loaded
 -- 'addon'      [string]            addon or variable name

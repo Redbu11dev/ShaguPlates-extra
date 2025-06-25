@@ -1,8 +1,17 @@
 (!) Rename folder to "ShaguPlates" for now (!)
 
+(!) I do not and do not plan to support non-english locales (!)
+
 REQUIRES SUPERWOW https://github.com/balakethelock/SuperWoW
 
 ShaguPlates, but restyled and with extra stuff
 
+Features:
 
-![image](https://github.com/user-attachments/assets/05d9e5cf-aad2-4ef0-8b88-f92a966645e7)
+- Power bars (mana, rage, energy) for nameplates
+- Better plate colors (more informative)
+- More intuitive plate selection
+- NPC faction names (like "<Argent Crusade>" or "<Trade goods>") under their names
+- NPC type icons
+- Player class icons
+- "in combat" indicator on an NPC/player nameplate

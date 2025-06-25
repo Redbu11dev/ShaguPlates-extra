@@ -267,12 +267,8 @@ ShaguPlates:SetScript("OnEvent", function()
     ShaguPlates.version.fix   = tonumber(fix)   or 0
     ShaguPlates.version.string = ShaguPlates.version.major .. "." .. ShaguPlates.version.minor .. "." .. ShaguPlates.version.fix
 
-    -- use "Modern" as default profile on a fresh install
-    if ShaguPlates.api.isempty(ShaguPlates_init) and ShaguPlates.api.isempty(ShaguPlates_config) then
-    end
-
-    ShaguPlates:LoadConfig()
-    ShaguPlates:MigrateConfig()
+    --ShaguPlates:LoadConfig()
+    --ShaguPlates:MigrateConfig()
     ShaguPlates:UpdateFonts()
 
     -- load modules
@@ -282,12 +278,12 @@ ShaguPlates:SetScript("OnEvent", function()
       end
     end
 
-    -- load skins
-    for _, s in pairs(this.skins) do
-      if not ( ShaguPlates_config["disabled"] and ShaguPlates_config["disabled"]["skin_" .. s]  == "1" ) then
-        ShaguPlates:LoadSkin(s)
-      end
-    end
+    -- -- load skins
+    -- for _, s in pairs(this.skins) do
+      -- if not ( ShaguPlates_config["disabled"] and ShaguPlates_config["disabled"]["skin_" .. s]  == "1" ) then
+        -- ShaguPlates:LoadSkin(s)
+      -- end
+    -- end
 
     ShaguPlates.bootup = nil
   end
