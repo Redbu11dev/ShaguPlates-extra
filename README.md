@@ -4,6 +4,17 @@
 
 REQUIRES SUPERWOW https://github.com/balakethelock/SuperWoW
 
+No configuration is available in Shaguplates-extra atm, download latest version from github, and remove any config files 
+
+global:
+(WTF->account->account name->SavedVariables->ShaguPlates.lua)
+(WTF->account->account name->SavedVariables->ShaguPlates.lua.bak)
+
+and for each realm for each character, e.g.:
+
+(WTF->account->account name->realm name->character name->SavedVariables->ShaguPlates.lua)
+(WTF->account->account name->realm name->character name->SavedVariables->ShaguPlates.lua.bak)
+
 ShaguPlates, but restyled and with extra stuff
 
 Features:
