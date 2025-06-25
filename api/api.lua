@@ -1011,9 +1011,11 @@ function ShaguPlates.api.CreateBackdrop(f, inset, legacy, transp, backdropSettin
   end
 
   -- detect if blizzard backdrops shall be used
-  local blizz = C.appearance.border.force_blizz == "1" and true or nil
+  local blizz = false
+  --local blizz = C.appearance.border.force_blizz == "1" and true or nil
   backdrop = blizz and ShaguPlates.backdrop_blizz_full or rawborder == 1 and ShaguPlates.backdrop_thin or ShaguPlates.backdrop
   border = blizz and math.max(border, 3) or border
+  border = 0.4
 
   -- get the color settings
   br, bg, bb, ba = ShaguPlates.api.GetStringColor(ShaguPlates_config.appearance.border.background)

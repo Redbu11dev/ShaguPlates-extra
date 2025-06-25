@@ -267,8 +267,8 @@ ShaguPlates:SetScript("OnEvent", function()
     ShaguPlates.version.fix   = tonumber(fix)   or 0
     ShaguPlates.version.string = ShaguPlates.version.major .. "." .. ShaguPlates.version.minor .. "." .. ShaguPlates.version.fix
 
-    --ShaguPlates:LoadConfig()
-    --ShaguPlates:MigrateConfig()
+    ShaguPlates:LoadConfig()
+    ShaguPlates:MigrateConfig()
     ShaguPlates:UpdateFonts()
 
     -- load modules

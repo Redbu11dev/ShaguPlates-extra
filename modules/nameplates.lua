@@ -126,7 +126,9 @@
 	--------------------------
 
 	-- cache default border color
-	local er, eg, eb, ea = GetStringColor(ShaguPlates_config.appearance.border.color)
+	--local er, eg, eb, ea = GetStringColor("0.2,0.2,0.2,0.1")
+	
+	local er, eg, eb, ea = 0.2,0.2,0.2,0.1
 
 	local function DoNothing()
 	return
