@@ -15,3 +15,6 @@ Features:
 - NPC type icons
 - Player class icons
 - "in combat" indicator on an NPC/player nameplate
+
+
+![image](https://github.com/user-attachments/assets/8842a386-0df2-40db-864f-4d4fbe3c20b2)
