@@ -1010,23 +1010,31 @@ nameplates.OnCreate = function(frame)
 	  -- create totem icon
 	  plate.totem.icon:SetTexture("Interface\\Icons\\" .. TotemIcon)
 
-	  plate.glow:Hide()
-	  plate.glow2:Hide()
+	  --plate.glow:Hide()
+	  --plate.glow2:Hide()
 	  plate.level:Hide()
 	  plate.name:Hide()
 	  plate.health:Hide()
+	  plate.power:Hide()
+	  plate.power:Hide()
+	  plate.typeIcon:Hide()
 	  plate.guild:Hide()
+	  
 	  plate.totem:Show()
+	  plate.glow:Show()
+	  plate.glow2:Show()
+	  plate.glow:SetPoint("LEFT", plate.totem, "LEFT", -30, 0)
+      plate.glow2:SetPoint("RIGHT", plate.totem, "RIGHT", 30, 0)
 	else
 	  --plate.level:SetPoint("LEFT", plate.health, "LEFT", 3, -8)
 	  plate.name:SetParent(plate.health)
 	  -- plate.guild:SetPoint("BOTTOM", plate.health, "BOTTOM", 0, -(font_size + 4))
-
+	  plate.totem:Hide()
+	  
 	  plate.level:Show()
 	  plate.name:Show()
 	  plate.health:Show()
-	  plate.glow:SetPoint("CENTER", plate.health, "CENTER", 0, 0)
-	  plate.totem:Hide()
+	  plate.glow:SetPoint("LEFT", plate.typeIcon, "LEFT", -30, 0)
 	end
 
 	--local TotemIcon = TotemPlate(name)
@@ -1068,7 +1076,7 @@ nameplates.OnCreate = function(frame)
 		plate.rarityIconR:Hide()
 	end
 
-	if (unitstr ~= nil) and not player then
+	if (unitstr ~= nil) and not player and not TotemIcon then
 		scanTool:ClearLines()
 		scanTool:SetUnit(unitstr)
 		local scanTextLine2Text = scanTextLine2:GetText()
@@ -1299,7 +1307,7 @@ nameplates.OnCreate = function(frame)
 	
 	local unitMaxPower = UnitManaMax(unitstr)
 	
-	if unitMaxPower > 0 then
+	if not TotemIcon and unitMaxPower > 0 then
 		local unitPower = UnitMana(unitstr)
 		plate.power.text:SetText(string.format("%s", Abbreviate(unitPower)))
 		
@@ -1420,6 +1428,9 @@ nameplates.OnCreate = function(frame)
 	local update
 	local frame = frame or this
 	local nameplate = frame.nameplate
+	if nameplate == nil then
+		return
+	end
 	local original = nameplate.original
 	local name = original.name:GetText()
 	local target = UnitExists("target") and frame:GetAlpha() == 1 or nil
