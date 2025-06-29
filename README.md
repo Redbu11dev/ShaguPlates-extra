@@ -24,6 +24,7 @@ Features:
 - More intuitive plate selection
 - NPC faction names (like "\<Argent Dawn\>" or "\<Trade goods\>") under their names
 - NPC type icons
+- Player race icons
 - Player class icons
 - "in combat" indicator on an NPC/player nameplate
 
