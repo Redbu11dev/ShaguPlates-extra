@@ -22,7 +22,7 @@ Features:
 - Power bars (mana, rage, energy) for nameplates
 - Better plate colors (more informative)
 - More intuitive plate selection
-- NPC faction names (like "\<Argent Crusade\>" or "\<Trade goods\>") under their names
+- NPC faction names (like "\<Argent Dawm\>" or "\<Trade goods\>") under their names
 - NPC type icons
 - Player class icons
 - "in combat" indicator on an NPC/player nameplate
