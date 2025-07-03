@@ -122,6 +122,8 @@
 	local nameplatesRightclick = true
 	local nameplatesClickthrough = "0"
 	local nameplatesClickthreshold = "0"
+	
+	local nameplateOffsetY = -40
 
 	--------------------------
 
@@ -284,28 +286,48 @@
 	  for _, v in pairs(r) do
 		  if  v:GetObjectType() == 'Texture' then
 			  --v:SetDrawLayer'OVERLAY'
-			  if  v:GetTexture() == [[Interface\Tooltips\ChatBubble-Background]] or  v:GetTexture() == [[Interface\Tooltips\ChatBubble-Backdrop]] then
+			  if  v:GetTexture() == [[Interface\Tooltips\ChatBubble-Background]] or v:GetTexture() == [[Interface\Tooltips\ChatBubble-Backdrop]] then
 				  --v:SetTexture''
-				DoNothing()
+				-- DoNothing()
+			  elseif (v:GetTexture() == [[Interface\Tooltips\ChatBubble-Tail]]) then
+				--print("asdasdasd")
+				--v:SetTexture("")
 			  end
 		  elseif  v:GetObjectType() == 'FontString' then
 			  f.textstring = v
 		  end
 	  end
-	  if not string.find(f.textstring:GetText(), "\n\n\n\n") then
-		f.textstring:SetText(f.textstring:GetText().."\n\n\n\n")
-	  end
+	  -- if not string.find(f.textstring:GetText(), "\n\n\n\n") then
+		-- f.textstring:SetText(f.textstring:GetText().."\n\n\n\n")
+	  -- end
 	  if not f.skinned then
+	  
+	  
 		-- local BACKDROP = {  bgFile = [[Interface\Tooltips\UI-Tooltip-Background]],
 					-- edgeFile = nil,
 					-- edgeSize = 0,
 					-- insets = {left = 2, right = 2, top = 2, bottom = 2},}
+					
+		-- local BACKDROP = {  bgFile = [[Interface\Tooltips\UI-Tooltip-Background]],
+					-- edgeFile = nil,
+					-- edgeSize = 8,
+					-- insets = {left = 2, right = 2, top = 2, bottom = 2},}
 
 		--modSkin(f, 1)
 		--modSkinColor(f, .7, .7, .7)
-		--f:SetBackdrop(BACKDROP)
-		--f:SetBackdropColor(0, 0, 0, .8)
-		--f.textstring:SetFont(STANDARD_TEXT_FONT, 13)
+		-- f:SetBackdrop(BACKDROP)
+		-- f:SetBackdropColor(0, 0, 0, .8)
+		--f.textstring:SetSpacing(5)
+		
+		-- f:SetBackdrop({
+			-- bgFile = "Interface/Tooltips/UI-Tooltip-Background",
+			-- edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
+			-- edgeSize = 16,
+			-- insets = { left = 4, right = 4, top = 4, bottom = 4 },
+		-- })
+		--f:SetBackdropColor(0, 0, 1, .5)
+		
+		f.textstring:SetFont(STANDARD_TEXT_FONT, 10)
 		--f.textstring:SetText("wasdas: "..f.textstring:GetText())
 		--local point, relativeTo, relativePoint, xOfs, yOfs = f:GetPoint(n)
 		--f:SetPoint(point, relativeTo, relativePoint, xOfs, yOfs+40)
@@ -316,25 +338,25 @@
 		-- f.parent:SetFrameLevel(4)
 		-- f.parent:SetFrameStrata("TOOLTIP")
 
-		local numpoints = f:GetNumPoints()
-		for i=1, numpoints do
-			--local point, relativeTo, relativePoint, xOfs, yOfs = f:GetPoint(i)
-			--f:SetPoint(point, relativeTo, relativePoint, xOfs, yOfs+40)
+		-- local numpoints = f:GetNumPoints()
+		-- for i=1, numpoints do
+			-- --local point, relativeTo, relativePoint, xOfs, yOfs = f:GetPoint(i)
+			-- --f:SetPoint(point, relativeTo, relativePoint, xOfs, yOfs+40)
 			
-			local point, relativeTo, relativePoint, xOfs, yOfs = f:GetPoint(i)
-			if i == 1 then
-				f:SetPoint(point, relativeTo, relativePoint, xOfs, yOfs)
-			else
-				f:SetPoint(point, relativeTo, relativePoint, xOfs, yOfs+40)
-			end
-		end
+			-- local point, relativeTo, relativePoint, xOfs, yOfs = f:GetPoint(i)
+			-- if i == 1 then
+				-- f:SetPoint(point, relativeTo, relativePoint, xOfs, yOfs)
+			-- else
+				-- f:SetPoint(point, relativeTo, relativePoint, xOfs, yOfs+40)
+			-- end
+		-- end
 		
 		
 		--f:SetHeight(v:GetHeight() + 50)
 		
 		--f.textstring:SetText(f.textstring:GetText().."\n\n\n\n")
 		
-		--f.textstring:SetSpacing(500)
+		-- f.textstring:SetSpacing(500)
 		
 		-- local numpointstxt = f.textstring:GetNumPoints()
 		-- for i=1, numpointstxt do
@@ -351,41 +373,41 @@
 	end
 
 	local function UpdateDebuffConfig(nameplate, i)
-	if not nameplate.debuffs[i] then return end
+		if not nameplate.debuffs[i] then return end
 
-	-- update debuff positions
-	local width = tonumber(nameplateWidth)
-	local debuffsize = tonumber(nameplatesDebuffsize)
-	local debuffoffset = tonumber(nameplatesDebuffOffset)
-	local limit = floor(width / debuffsize)
-	local font = nameplatesUseUnitfonts and ShaguPlates.font_unit or ShaguPlates.font_default
-	local font_size = nameplatesUseUnitfonts and globalFontUnitSize or globalFontSize
-	local font_style = nameplatesNameFontstyle
+		-- update debuff positions
+		local width = tonumber(nameplateWidth)
+		local debuffsize = tonumber(nameplatesDebuffsize)
+		local debuffoffset = tonumber(nameplatesDebuffOffset)
+		local limit = floor(width / debuffsize)
+		local font = nameplatesUseUnitfonts and ShaguPlates.font_unit or ShaguPlates.font_default
+		local font_size = nameplatesUseUnitfonts and globalFontUnitSize or globalFontSize
+		local font_style = nameplatesNameFontstyle
 
-	local aligna, alignb, offs, space
-	if nameplatesDebuffsPosition == "BOTTOM" then
-	  aligna, alignb, offs, space = "TOPLEFT", "BOTTOMLEFT", -debuffoffset, -1
-	else
-	  aligna, alignb, offs, space = "BOTTOMLEFT", "CENTER", debuffoffset, 1
-	end
+		local aligna, alignb, offs, space
+		if nameplatesDebuffsPosition == "BOTTOM" then
+		  aligna, alignb, offs, space = "TOPLEFT", "BOTTOMLEFT", -debuffoffset, -1
+		else
+		  aligna, alignb, offs, space = "BOTTOMLEFT", "CENTER", debuffoffset, 1
+		end
 
-	nameplate.debuffs[i].stacks:SetFont(font, font_size, font_style)
-	nameplate.debuffs[i]:ClearAllPoints()
-	if i == 1 then
-	  -- if nameplate.guild:GetText() and string.len(nameplate.guild:GetText()) > 0 and nameplate.guild:IsShown() then
-		-- nameplate.debuffs[i]:SetPoint(aligna, nameplate.name, alignb, 0, offs)
-	  -- else
-		-- nameplate.debuffs[i]:SetPoint(aligna, nameplate.health, alignb, 0, offs)
-	  -- end
-	  nameplate.debuffs[i]:SetPoint(aligna, nameplate.name, alignb, -(nameplate.health:GetWidth()/2), offs)
-	elseif i <= limit then
-	  nameplate.debuffs[i]:SetPoint("LEFT", nameplate.debuffs[i-1], "RIGHT", 1, 0)
-	elseif i > limit and limit > 0 then
-	  nameplate.debuffs[i]:SetPoint(aligna, nameplate.debuffs[i-limit], alignb, 0, space)
-	end
+		nameplate.debuffs[i].stacks:SetFont(font, font_size, font_style)
+		nameplate.debuffs[i]:ClearAllPoints()
+		if i == 1 then
+		  -- if nameplate.guild:GetText() and string.len(nameplate.guild:GetText()) > 0 and nameplate.guild:IsShown() then
+			-- nameplate.debuffs[i]:SetPoint(aligna, nameplate.name, alignb, 0, offs)
+		  -- else
+			-- nameplate.debuffs[i]:SetPoint(aligna, nameplate.health, alignb, 0, offs)
+		  -- end
+		  nameplate.debuffs[i]:SetPoint(aligna, nameplate.name, alignb, -(nameplate.health:GetWidth()/2), offs)
+		elseif i <= limit then
+		  nameplate.debuffs[i]:SetPoint("LEFT", nameplate.debuffs[i-1], "RIGHT", 1, 0)
+		elseif i > limit and limit > 0 then
+		  nameplate.debuffs[i]:SetPoint(aligna, nameplate.debuffs[i-limit], alignb, 0, space)
+		end
 
-	nameplate.debuffs[i]:SetWidth(tonumber(nameplatesDebuffsize))
-	nameplate.debuffs[i]:SetHeight(tonumber(nameplatesDebuffsize))
+		nameplate.debuffs[i]:SetWidth(tonumber(nameplatesDebuffsize))
+		nameplate.debuffs[i]:SetHeight(tonumber(nameplatesDebuffsize))
 	end
 
 	-- create nameplate core
@@ -396,69 +418,110 @@
 	nameplates:RegisterEvent("PLAYER_COMBO_POINTS")
 	nameplates:RegisterEvent("UNIT_AURA")
 	--nameplates:RegisterEvent("CHAT_MSG_ADDON")
+	
+	local function explode(str, delimiter)
+		local result = {}
+		local from = 1
+		local delim_from, delim_to = string.find(str, delimiter, from, 1, true)
+		while delim_from do
+			table.insert(result, string.sub(str, from, delim_from - 1))
+			from = delim_to + 1
+			delim_from, delim_to = string.find(str, delimiter, from, true)
+		end
+		table.insert(result, string.sub(str, from))
+		return result
+	end
 
 	nameplates:SetScript("OnEvent", function()
-	if event == "PLAYER_ENTERING_WORLD" then
-	  this:SetGameVariables()
-	else
-	  this.eventcache = true
-	end
-	
-	-- if event == "CHAT_MSG_ADDON" and string.find(arg2, "TWTv4=", 1, true) then
-		-- --me.processthreatupdate(arg2)
-		-- --return 
-		-- --print("yessssss")
-	-- else
-		-- --print("yessssss0")
-		-- SendAddonMessage("TWT_UDTSv4", "limit=" .. 5, "PARTY")
-		-- --print("yessssss1")
-	-- end
-	
+		if event == "PLAYER_ENTERING_WORLD" then
+		  this:SetGameVariables()
+		else
+		  this.eventcache = true
+		end
+		
+		-- if event == "CHAT_MSG_ADDON" and string.find(arg2, "TWTv4=", 1, true) then
+			-- --me.processthreatupdate(arg2)
+			-- --return 
+			-- print("yessssss")
+			
+			-- local message = arg2
+			
+			-- local playersString = string.sub(message, find(message, "TWTv4=") + string.len("TWTv4="), string.len(message))
+
+			-- local players = explode(playersString, ';')
+
+			-- for _, tData in players do
+
+				-- local msgEx = explode(tData, ':')
+
+				-- -- udts handling
+				-- if msgEx[1] and msgEx[2] and msgEx[3] and msgEx[4] and msgEx[5] then
+
+					-- local player = msgEx[1]
+					-- local tank = msgEx[2] == '1'
+					-- local threat = tonumber(msgEx[3])
+					-- local perc = tonumber(msgEx[4])
+					-- local melee = msgEx[5] == '1'
+
+					-- --mod.table.updateplayerthreat(player, threat)
+					-- --KLHTM_RequestRedraw("raid")
+					
+					-- print("player: "..player.." tank: "..tank.." perc: "..perc)
+				-- end
+			-- end
+			
+		-- else
+			-- --print("yessssss0")
+			-- SendAddonMessage("TWT_UDTSv4", "limit=" .. 5, "PARTY")
+			-- --print("yessssss1")
+		-- end
+		
 	end)
 
 	nameplates:SetScript("OnUpdate", function()
-	-- propagate events to all nameplates
-	if this.eventcache then
-	  this.eventcache = nil
-	  for plate in pairs(registry) do
-		plate.eventcache = true
-	  end
-	end
-
-	-- detect new nameplates
-	parentcount = WorldFrame:GetNumChildren()
-	if initialized < parentcount then
-	  childs = { WorldFrame:GetChildren() }
-	  for i = initialized + 1, parentcount do
-		plate = childs[i]
-		if IsNamePlate(plate) and not registry[plate] then
-		  nameplates.OnCreate(plate)
-		  registry[plate] = plate
+		-- propagate events to all nameplates
+		if this.eventcache then
+		  this.eventcache = nil
+		  for plate in pairs(registry) do
+			plate.eventcache = true
+		  end
 		end
-	  end
 
-	  initialized = parentcount
-	end
+		-- detect new nameplates
+		parentcount = WorldFrame:GetNumChildren()
+		if initialized < parentcount then
+		  childs = { WorldFrame:GetChildren() }
+		  for i = initialized + 1, parentcount do
+			plate = childs[i]
+			if IsNamePlate(plate) and not registry[plate] then
+			  nameplates.OnCreate(plate)
+			  registry[plate] = plate
+			end
+		  end
 
-	--print("h1")
-	local newNumKids = WorldFrame:GetNumChildren()
-	local f = {WorldFrame:GetChildren()}
-	for _, v in pairs(f) do
-		if isBalloon(v) then
-			styleBalloon(v)
-			--v:SetDrawLayer("OVERLAY")
-			--v:SetFrameLevel(4)
-			--v:SetFrameStrata("TOOLTIP")
-			--v:SetHeight(v:GetHeight() + 50)
-			--print("h"..v:GetHeight())
-			
-			--v:GetParent():SetPoint("BOTTOM", nil, "TOP", -2, 28)
-			
-			--print("h"..v.parent:GetText())
+		  initialized = parentcount
 		end
-	end
-	--print("h2")
-	--print(numKids)
+
+		--print("h1")
+		--local newNumKids = WorldFrame:GetNumChildren()
+		local f = {WorldFrame:GetChildren()}
+		for _, v in pairs(f) do
+			--print("aaa")
+			--print("aaa")
+			if isBalloon(v) then
+				styleBalloon(v)
+				--print("aaa2")
+				--v:SetDrawLayer("OVERLAY")
+				--v:SetFrameLevel(4)
+				--v:SetFrameStrata("TOOLTIP")
+				--v:SetHeight(v:GetHeight() + 50)
+				--print("h"..v:GetHeight())
+				
+				--v:GetParent():SetPoint("BOTTOM", nil, "TOP", -2, 28)
+				
+				--print("h"..v.parent:GetText())
+			end
+		end
 
 	end)
 
@@ -525,7 +588,7 @@ nameplates.OnCreate = function(frame)
 	
 	nameplate:SetWidth(plate_width)
 	-- nameplate:SetPoint("TOP", parent, "TOP", 0, 0)
-	nameplate:SetPoint("TOP", parent, "TOP", 0, 0)
+	nameplate:SetPoint("TOP", parent, "TOP", 0, nameplateOffsetY)
 	
 	-----------------------------------
 
@@ -1652,6 +1715,12 @@ nameplates.OnCreate = function(frame)
 		
 		this:SetWidth(1)
 		this:SetHeight(1)
+		
+		-- local zoom = GetCameraZoom()
+		
+		plate:SetPoint("TOP", plate.parent, "TOP", 0, nameplateOffsetY)
+		-- print("zoom")
+		-- print("zoom: "..zoom)
 		
 		-- plate:SetPoint("TOP", plate.parent, "TOP", 0, -40)
 		
