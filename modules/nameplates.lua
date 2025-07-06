@@ -959,8 +959,9 @@ nameplates.OnCreate = function(frame)
 
 
 	elite = plate.original.levelicon:IsShown() and not player and "boss" or elite
-	if not class then
-		plate.wait_for_scan = true 
+	if player and not class then
+		plate.wait_for_scan = true
+		return
 	end
 
 	-- skip data updates on invisible frames
