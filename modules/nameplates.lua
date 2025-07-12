@@ -123,7 +123,7 @@
 	local nameplatesClickthrough = "0"
 	local nameplatesClickthreshold = "0"
 	
-	local nameplateOffsetY = -40
+	local nameplateOffsetY = -20
 
 	--------------------------
 
@@ -564,6 +564,10 @@ nameplates.OnCreate = function(frame)
 	nameplate.UnitDebuff = PlateUnitDebuff
 	nameplate.CacheDebuffs = PlateCacheDebuffs
 	nameplate.original = {}
+	
+	nameplate.distanceToPlayer = 999
+	nameplate.desiredYOffset = 0
+	nameplate.currentYOffset = 0
 
 	-- create shortcuts for all known elements and disable them
 	nameplate.original.healthbar, nameplate.original.castbar = parent:GetChildren()
@@ -587,8 +591,8 @@ nameplates.OnCreate = function(frame)
 	nameplate:SetScale(UIParent:GetScale())
 	
 	nameplate:SetWidth(plate_width)
-	-- nameplate:SetPoint("TOP", parent, "TOP", 0, 0)
-	nameplate:SetPoint("TOP", parent, "TOP", 0, nameplateOffsetY)
+	nameplate:SetPoint("TOP", parent, "TOP", 0, 0)
+	-- nameplate:SetPoint("TOP", parent, "TOP", 0, nameplateOffsetY)
 	
 	-----------------------------------
 
@@ -716,6 +720,18 @@ nameplates.OnCreate = function(frame)
 	nameplate.rarityIconR.icon:SetAllPoints()
 	nameplate.rarityIconR.icon:SetTexture("Interface\\AddOns\\ShaguPlates\\img\\frame_elite")
 	nameplate.rarityIconR:Hide()
+	
+	nameplate.petHappiness = CreateFrame("Frame", nil, nameplate)
+	nameplate.petHappiness:SetFrameLevel(0)
+	nameplate.petHappiness:SetPoint("LEFT", nameplate.name, "RIGHT", -0, 4)
+	nameplate.petHappiness:SetHeight(20)
+	nameplate.petHappiness:SetWidth(20)
+	nameplate.petHappiness.icon = nameplate.petHappiness:CreateTexture(nil, "OVERLAY")
+	--nameplate.rarityIconR.icon:SetTexCoord(1, 0, 0, 1)
+	--nameplate.combatIcon.icon:SetVertexColor(1, 1, 0, 1)
+	nameplate.petHappiness.icon:SetAllPoints()
+	nameplate.petHappiness.icon:SetTexture("Interface\\PetPaperDollFrame\\UI-PetHappiness")
+	nameplate.petHappiness:Hide()
 	
 	nameplate.combatIcon = CreateFrame("Frame", nil, nameplate)
 	nameplate.combatIcon:SetFrameLevel(0)
@@ -908,6 +924,30 @@ nameplates.OnCreate = function(frame)
 	end
 	
 	-----------------------------------------------
+	
+	local function updateGuildDispaly(nameplate, guild)
+		if guild and string.len(guild) > 0 then
+		  nameplate.guild:SetText("<"..guild..">")
+		  if (not nameplate.isInMouseOver) then
+			  if guild == GetGuildInfo("player") then
+				nameplate.guild:SetTextColor(0, 0.9, 0, 1)
+			  else
+				nameplate.guild:SetTextColor(0.8, 0.8, 0.8, 1)
+			  end
+		  end
+		  nameplate.guild:Show()
+		  nameplate.guild:SetPoint("BOTTOM", nameplate, "TOP", 0, 0)
+		  nameplate.name:SetPoint("BOTTOM", nameplate.guild, "TOP", 0, 0)
+		  nameplate.health:SetPoint("TOP", nameplate.guild, "BOTTOM", 0, healthoffset)
+		else
+		  nameplate.guild:Hide()
+		  nameplate.guild:SetPoint("BOTTOM", nameplate, "TOP", 0, 0)
+		  nameplate.name:SetPoint("BOTTOM", nameplate, "TOP", 0, 0)
+		  nameplate.health:SetPoint("TOP", nameplate.name, "BOTTOM", 0, healthoffset)
+		end	
+	end
+	
+	-----------------------------------------------
 
 	nameplates.OnDataChanged = function(self, plate)
 	local visible = plate:IsVisible()
@@ -915,114 +955,85 @@ nameplates.OnCreate = function(frame)
 	local hpmin, hpmax = plate.original.healthbar:GetMinMaxValues()
 	local name = plate.original.name:GetText()
 	local level = plate.original.level:IsShown() and plate.original.level:GetObjectType() == "FontString" and tonumber(plate.original.level:GetText()) or "??"
+	local levelDifficultyColor = GetDifficultyColor(255)
+	if tonumber(level) then
+		levelDifficultyColor = GetDifficultyColor(tonumber(level))
+	end
+	local isGrayLevel = levelDifficultyColor.r == 0.5 and levelDifficultyColor.g == 0.5 and levelDifficultyColor.b == 0.5
 	local class, ulevel, elite, player, guild = GetUnitData(name, true)
 	local target = plate.istarget
-	local mouseover = UnitExists("mouseover") and plate.original.glow:IsShown() or nil
+	local mouseover = UnitExists("mouseover")
 	local unitstr = target and "target" or mouseover and "mouseover" or nil
-	local red, green, blue = plate.original.healthbar:GetStatusBarColor()
-	local unittype = GetUnitType(red, green, blue) or "ENEMY_NPC"
+	--local red, green, blue = plate.original.healthbar:GetStatusBarColor()
+	--local unittype = GetUnitType(red, green, blue) or "ENEMY_NPC"
 	local font_size = nameplatesUseUnitfonts and globalFontUnitSize or globalFontSize
 	local rawborder, default_border = GetBorderSize("nameplates")
-	local redx, greenx, bluex = plate.original.healthbar:GetStatusBarColor()
-	local r, g, b, a = redx, greenx, bluex, 1
-
-	-- use superwow unit guid as unitstr if possible
-	if superwow_active and not unitstr then
-	  unitstr = plate.parent:GetName(1)
-	end
-
+	local redOriginal, greenOriginal, blueOriginal = plate.original.healthbar:GetStatusBarColor()
+	-- local r, g, b, a = redx, greenx, bluex, 1
+	local race, raceEn
+	
 	-- ignore players with npc names if plate level is lower than player level
-	if ulevel and ulevel > (level == "??" and -1 or level) then
-		player = nil 
-	end
-
-	-- cache name and reset unittype on change
-	if plate.cache.name ~= name then
-	  plate.cache.name = name
-	  plate.cache.player = nil
-	end
-
-	-- read and cache unittype
-	if plate.cache.player then
-	  -- overwrite unittype from cache if existing
-	  player = plate.cache.player == "PLAYER" and true or nil
-	elseif unitstr then
-	  -- read unit type while unitstr is set
-	  plate.cache.player = UnitIsPlayer(unitstr) and "PLAYER" or "NPC"
-	end
-
-	--if player and unittype == "ENEMY_NPC" then unittype = "ENEMY_PLAYER" end
-
-	if player and unittype == "ENEMY_NPC" then 
-		unittype = "ENEMY_PLAYER" 
-	end
-
-
-	elite = plate.original.levelicon:IsShown() and not player and "boss" or elite
-	if player and not class then
-		plate.wait_for_scan = true
-		return
-	end
-
+	-- if ulevel and ulevel > (level == "??" and -1 or level) then
+		-- player = nil 
+	-- end
+	
 	-- skip data updates on invisible frames
 	if not visible then return end
+	
+	--print("unitstr = plate.original.name:GetText(): "..plate.original.name:GetText())
+	--print("unitstr = plate.parent:GetName(1): "..plate.parent:GetName(1))
 
+	-- use superwow unit guid as unitstr if possible
+	if superwow_active then
+		unitstr = plate.parent:GetName(1)
+	end
+	
+	local originalPlateName = plate.original.name:GetText()
+	local originalPlateLevel = level
+	
 	-- target event sometimes fires too quickly, where nameplate identifiers are not
 	-- yet updated. So while being inside this event, we cannot trust the unitstr.
 	if event == "PLAYER_TARGET_CHANGED" then unitstr = nil end
-
+	
+	
+	-----------
+	local isPlayer = (player ~= nil)
+	
+	elite = plate.original.levelicon:IsShown() and not isPlayer and "boss" or elite	
+	
+	
+	--WAIT FOR SCAN--
 	-- remove unitstr on unit name mismatch
 	if unitstr and UnitName(unitstr) ~= name then 
 		unitstr = nil
-		-- nameplates.OnCreate(plate)
 		
-		plate.health:SetStatusBarColor(r, g, b, a)
 		--happens when unit dies
 		--IMPORTANT
 		plate.wait_for_scan = true
-		return
 	end
 	
 	if (unitstr == nil) then
-		unitstr = plate.parent:GetName(1)
+		plate.wait_for_scan = true
 	end
-
-	-- use mobhealth values if addon is running
-	if (MobHealth3 or MobHealthFrame) and target and name == UnitName('target') and MobHealth_GetTargetCurHP() then
-	  hp = MobHealth_GetTargetCurHP() > 0 and MobHealth_GetTargetCurHP() or hp
-	  hpmax = MobHealth_GetTargetMaxHP() > 0 and MobHealth_GetTargetMaxHP() or hpmax
+	
+	if isPlayer then
+		if not class then
+			plate.wait_for_scan = true
+		end
+		
+		if (unitstr ~= nil) then
+			race, raceEn = UnitRace(unitstr)
+		end
+		if (not raceEn) then
+			plate.wait_for_scan = true
+		end
 	end
+	--WAIT FOR SCAN END--
+	
+	------------
 
 	-- always make sure to keep plate visible
 	plate:Show()
-
-	-- print(initialized)
-	-- print(parentcount)
-	-- print(platecount)
-	--print(table.getn(registry))
-
-	-- init other variables
-	local isGrayLevel = false
-	local difficultyColor = {r=1, g=1, b=1}
-	
-	if (unitstr ~= nil) then
-		--print("ulevel1: "..ulevel)
-		--print(ulevel)
-		if ulevel ~= nil then
-			if (ulevel > 0) then
-				difficultyColor = GetDifficultyColor(ulevel)
-				if (difficultyColor ~= nil) then
-					isGrayLevel = difficultyColor.r == 0.5 and difficultyColor.g == 0.5 and difficultyColor.b == 0.5
-				else
-					difficultyColor = {r=1, g=1, b=1}
-				end
-			else
-				difficultyColor = {r=0.5, g=0.5, b=0.5}
-			end
-		end
-	end
-
-	--guild = GetGuildInfo(unitstr)
 	
 	if target then
 		if nameplatesTargetglow then
@@ -1032,87 +1043,95 @@ nameplates.OnCreate = function(frame)
 		  plate.glow:Hide()
 		  plate.glow2:Hide()
 		end
-		
-		-- if IsCurrentSpell(8386) then
-			-- plate.attackIcon:Show()
-		-- else
-			-- plate.attackIcon:Hide()
-		-- end
 	else
 		plate.glow:Hide()
 		plate.glow2:Hide()
-		--plate.attackIcon:Hide()
 	end
-
-	-- target indicator
-	-- if superwow_active and nameplatesOutcombatstate then
-	  -- local guid = plate.parent:GetName(1) or ""
-
-	  -- -- determine color based on combat state
-	  -- local color = GetCombatStateColor(guid)
-	  -- if not color then color = combatstate.NONE end
-
-	  -- -- set border color
-	  -- plate.health.backdrop:SetBackdropBorderColor(color.r, color.g, color.b, color.a)
-	  -- plate.power.backdrop:SetBackdropBorderColor(color.r, color.g, color.b, color.a)
-	  -- plate.typeIcon.backdrop:SetBackdropBorderColor(color.r, color.g, color.b, color.a)
-	-- elseif target and nameplatesTargethighlight then
+	
 	if target and nameplatesTargethighlight then
-	  plate.health.backdrop:SetBackdropBorderColor(plate.health.hlr, plate.health.hlg, plate.health.hlb, plate.health.hla)
-	  plate.power.backdrop:SetBackdropBorderColor(plate.health.hlr, plate.health.hlg, plate.health.hlb, plate.health.hla)
-	  plate.typeIcon.backdrop:SetBackdropBorderColor(plate.health.hlr, plate.health.hlg, plate.health.hlb, plate.health.hla)
+		plate.health.backdrop:SetBackdropBorderColor(plate.health.hlr, plate.health.hlg, plate.health.hlb, plate.health.hla)
+		plate.power.backdrop:SetBackdropBorderColor(plate.health.hlr, plate.health.hlg, plate.health.hlb, plate.health.hla)
+		plate.typeIcon.backdrop:SetBackdropBorderColor(plate.health.hlr, plate.health.hlg, plate.health.hlb, plate.health.hla)
 	else
-	  plate.health.backdrop:SetBackdropBorderColor(er,eg,eb,ea)
-	  plate.power.backdrop:SetBackdropBorderColor(er,eg,eb,ea)
-	  plate.typeIcon.backdrop:SetBackdropBorderColor(er,eg,eb,ea)
+		plate.health.backdrop:SetBackdropBorderColor(er,eg,eb,ea)
+		plate.power.backdrop:SetBackdropBorderColor(er,eg,eb,ea)
+		plate.typeIcon.backdrop:SetBackdropBorderColor(er,eg,eb,ea)
 	end
+	
+	--HEALTH
+	
+	-- use mobhealth values if addon is running
+	if (MobHealth3 or MobHealthFrame) and target and name == UnitName('target') and MobHealth_GetTargetCurHP() then
+	  hp = MobHealth_GetTargetCurHP() > 0 and MobHealth_GetTargetCurHP() or hp
+	  hpmax = MobHealth_GetTargetMaxHP() > 0 and MobHealth_GetTargetMaxHP() or hpmax
+	end
+	
+	plate.health:SetMinMaxValues(hpmin, hpmax)
+	plate.health:SetValue(hp)
+
+	if nameplatesShowhp then
+	  local rhp, rhpmax, estimated
+	  if hpmax > 100 or (round(hpmax/100*hp) ~= hp) then
+		rhp, rhpmax = hp, hpmax
+	  elseif ShaguPlates.libhealth and ShaguPlates.libhealth.enabled then
+		rhp, rhpmax, estimated = ShaguPlates.libhealth:GetUnitHealthByName(name,level,tonumber(hp),tonumber(hpmax))
+	  end
+
+	  local setting = nameplatesHptextformat
+	  local hasdata = ( estimated or hpmax > 100 or (round(hpmax/100*hp) ~= hp) )
+	  
+	  if setting == "cur" and hasdata then
+		plate.health.text:SetText(string.format("%s", Abbreviate(rhp)))
+	  else -- "percent" as fallback
+		plate.health.text:SetText(string.format("%s%%", ceil(hp/hpmax*100)))
+	  end
+	  
+	else
+	  plate.health.text:SetText()
+	end
+	
+	--HEALTH END
+	
+	--TOTEM
 
 	-- hide frames according to the configuration
 	local TotemIcon = TotemPlate(name)
 
 	if TotemIcon then
 	  -- create totem icon
-	  plate.totem.icon:SetTexture("Interface\\Icons\\" .. TotemIcon)
-
-	  --plate.glow:Hide()
-	  --plate.glow2:Hide()
-	  plate.level:Hide()
-	  plate.name:Hide()
-	  plate.health:Hide()
-	  plate.power:Hide()
-	  plate.power:Hide()
-	  plate.typeIcon:Hide()
-	  plate.guild:Hide()
+		plate.totem.icon:SetTexture("Interface\\Icons\\" .. TotemIcon)
+		
+		plate.level:Hide()
+		plate.name:Hide()
+		plate.guild:Hide()
+		plate.health:Hide()
+		plate.power:Hide()
+		plate.typeIcon:Hide()
+		plate.classIcon:Hide()
+		plate.rarityIcon:Hide()
+		plate.rarityIconR:Hide()
+		plate.combatIcon:Hide()
+		plate.petHappiness:Hide()
+		
+		plate.glow:SetPoint("LEFT", plate.totem, "LEFT", -30, 0)
+		plate.glow2:SetPoint("RIGHT", plate.totem, "RIGHT", 30, 0)
 	  
-	  plate.totem:Show()
-	  plate.glow:Show()
-	  plate.glow2:Show()
-	  plate.glow:SetPoint("LEFT", plate.totem, "LEFT", -30, 0)
-      plate.glow2:SetPoint("RIGHT", plate.totem, "RIGHT", 30, 0)
+		plate.totem:Show()
+		
+		return
 	else
-	  --plate.level:SetPoint("LEFT", plate.health, "LEFT", 3, -8)
-	  plate.name:SetParent(plate.health)
-	  -- plate.guild:SetPoint("BOTTOM", plate.health, "BOTTOM", 0, -(font_size + 4))
-	  plate.totem:Hide()
-	  
-	  plate.level:Show()
-	  plate.name:Show()
-	  plate.health:Show()
-	  plate.glow:SetPoint("LEFT", plate.typeIcon, "LEFT", -30, 0)
+		plate.name:SetParent(plate.health)
+		plate.glow:SetPoint("LEFT", plate.typeIcon, "LEFT", -30, 0)
+		
+		plate.totem:Hide()
 	end
-
-	--local TotemIcon = TotemPlate(name)
-	--plate.classIcon:SetTexture("Interface\\Icons\\" .. "Image:Spell_Fire_SearingTotem")
-	--plate.classIcon:Show()
-
-	plate.name:SetText(name)
-	--plate.level:SetText(string.format("%s%s", level, (elitestrings[elite] or "")))
-	plate.level:SetText(""..level)
-	plate.level:SetTextColor(difficultyColor.r, difficultyColor.g, difficultyColor.b, 1)
-
+	
+	--TOTEM END
+	
+	--RARITY
 	plate.rarityIcon.icon:SetTexture("Interface\\AddOns\\ShaguPlates\\img\\frame_elite")
 	plate.rarityIconR.icon:SetTexture("Interface\\AddOns\\ShaguPlates\\img\\frame_elite")
-
+	
 	if elite == "elite" then
 		plate.rarityIcon.icon:SetVertexColor(1, 1, 0, 1)
 		plate.rarityIcon:Show()
@@ -1139,287 +1158,38 @@ nameplates.OnCreate = function(frame)
 		plate.rarityIcon:Hide()
 		plate.rarityIconR:Hide()
 	end
-
-	if (unitstr ~= nil) and not player and not TotemIcon then
-		scanTool:ClearLines()
-		scanTool:SetUnit(unitstr)
-		local scanTextLine2Text = scanTextLine2:GetText()
-		--if not ownerText then return nil end
-		--local owner, _ = string.split("'",ownerText)
-		
-		-- if (unitstr ~= nil) and UnitIsPossessed(unitstr) then
-			-- guild = "PET"
-		-- end
-		
-		if scanTextLine2Text and not string.find(scanTextLine2Text, "Level") then
-			--local owner, _ = string.split("'",ownerText)
-			guild = scanTextLine2Text
-		end
-	end
-
-	--guild = nil
-	if guild and string.len(guild) > 0 then
-	  plate.guild:SetText("<"..guild..">")
-	  if (not plate.isInMouseOver) then
-		  if guild == GetGuildInfo("player") then
-			plate.guild:SetTextColor(0, 0.9, 0, 1)
-		  else
-			plate.guild:SetTextColor(0.8, 0.8, 0.8, 1)
-		  end
-	  end
-	  plate.guild:Show()
-	  plate.guild:SetPoint("BOTTOM", plate, "TOP", 0, 0)
-	  plate.name:SetPoint("BOTTOM", plate.guild, "TOP", 0, 0)
-	  plate.health:SetPoint("TOP", plate.guild, "BOTTOM", 0, healthoffset)
-	else
-	  plate.guild:Hide()
-	  plate.guild:SetPoint("BOTTOM", plate, "TOP", 0, 0)
-	  plate.name:SetPoint("BOTTOM", plate, "TOP", 0, 0)
-	  plate.health:SetPoint("TOP", plate.name, "BOTTOM", 0, healthoffset)
-	end
-
-	plate.health:SetMinMaxValues(hpmin, hpmax)
-	plate.health:SetValue(hp)
-
-	if nameplatesShowhp then
-	  local rhp, rhpmax, estimated
-	  if hpmax > 100 or (round(hpmax/100*hp) ~= hp) then
-		rhp, rhpmax = hp, hpmax
-	  elseif ShaguPlates.libhealth and ShaguPlates.libhealth.enabled then
-		rhp, rhpmax, estimated = ShaguPlates.libhealth:GetUnitHealthByName(name,level,tonumber(hp),tonumber(hpmax))
-	  end
-
-	  local setting = nameplatesHptextformat
-	  local hasdata = ( estimated or hpmax > 100 or (round(hpmax/100*hp) ~= hp) )
-
-	  if setting == "curperc" and hasdata then
-		plate.health.text:SetText(string.format("%s | %s%%", Abbreviate(rhp), ceil(hp/hpmax*100)))
-	  elseif setting == "cur" and hasdata then
-		plate.health.text:SetText(string.format("%s", Abbreviate(rhp)))
-	  elseif setting == "curmax" and hasdata then
-		plate.health.text:SetText(string.format("%s - %s", Abbreviate(rhp), Abbreviate(rhpmax)))
-	  elseif setting == "curmaxs" and hasdata then
-		plate.health.text:SetText(string.format("%s / %s", Abbreviate(rhp), Abbreviate(rhpmax)))
-	  elseif setting == "curmaxperc" and hasdata then
-		plate.health.text:SetText(string.format("%s - %s | %s%%", Abbreviate(rhp), Abbreviate(rhpmax), ceil(hp/hpmax*100)))
-	  elseif setting == "curmaxpercs" and hasdata then
-		plate.health.text:SetText(string.format("%s / %s | %s%%", Abbreviate(rhp), Abbreviate(rhpmax), ceil(hp/hpmax*100)))
-	  elseif setting == "deficit" then
-		plate.health.text:SetText(string.format("-%s" .. (hasdata and "" or "%%"), Abbreviate(rhpmax - rhp)))
-	  else -- "percent" as fallback
-		plate.health.text:SetText(string.format("%s%%", ceil(hp/hpmax*100)))
-	  end
-	else
-	  plate.health.text:SetText()
-	end
-
-	--local unittype = GetUnitType(red, green, blue) or "ENEMY_NPC"
-
-	--if player and unittype == "ENEMY_NPC" then 
-	if (unitstr == nil) then
-		-- unitstr is null
-	else
-		
-		if (UnitAffectingCombat(unitstr)) then
-			--nameplate.combatIcon.icon:SetTexture("Interface\\AddOns\\ShaguPlates\\img\\combat\\sword_and_shield")
-			plate.combatIcon:Show()
-		else
-			plate.combatIcon:Hide()
-		end
-		
-		local playerCanAttackUnit = UnitCanAttack("player", unitstr)
-		if plate.OnEnterScript == nil then
-			local scrf = function()
-				if not IsMouselooking() then
+	--RARITY END
+	
+	-- local playerCanAttackUnit = UnitCanAttack("player", unitstr)
+	if plate.OnEnterScript == nil then
+		local scrf = function()
+			if not IsMouselooking() then			
+				if (unitstr) then
+					local playerCanAttackUnit = UnitCanAttack("player", unitstr)
 					if playerCanAttackUnit then
 						SetCursor("ATTACK_CURSOR")
 					end
-			
+					
 					GameTooltip_SetDefaultAnchor(GameTooltip, UIParent)
 					GameTooltip:SetUnit(unitstr)
 					GameTooltip:Show()
-					
-					plate.selectionGlow:Show()
-					
-					plate.name:SetTextColor(1,1,0,1)
-					plate.guild:SetTextColor(1,1,0,1)
-					
-					-- plate:SetFrameStrata("LOW")
-					-- plate.target_strata = 1
-					
-					plate.isInMouseOver = true
-					--nameplates:OnDataChanged(plate)
 				end
-			end
-			plate:SetScript("OnEnter", scrf)
-		end
-		-- plate:SetScript("OnEnter", function()			
-			-- GameTooltip_SetDefaultAnchor(GameTooltip, UIParent)
-			-- GameTooltip:SetUnit(unitstr)
-			-- GameTooltip:Show()
-		-- end)
-	
-		plate.health:SetWidth(nameplateWidth)
-		plate.health:SetHeight(nameplatesHeighthealth)
-		
-		plate.power:SetWidth(nameplateWidth)
-		plate.power:SetHeight(nameplatesHeightPower)
-		
-		plate.typeIcon:SetHeight(nameplatesHeighthealth)
-		plate.typeIcon:SetWidth(nameplatesHeighthealth)
-		
-		plate.selectionGlow:SetWidth(nameplateWidth + 60)
-		plate.selectionGlow:SetHeight(nameplatesHeighthealth + 60)
-		
-		if not player then
-			plate.classIcon:Hide()
-			local creatureType = UnitCreatureType(unitstr)
-			if (creatureType ~= nil and creatureType ~= "" and creatureType ~= "Not specified") then
-				plate.typeIcon.icon:SetTexture("Interface\\AddOns\\ShaguPlates\\img\\creaturetypes\\"..string.upper(UnitCreatureType(unitstr))..".tga")
 				
-				if creatureType == "Critter" then
-					plate.health:SetWidth(nameplateWidthCritter)
-					plate.health:SetHeight(nameplatesHeighthealthCritter)
-					plate.typeIcon:SetHeight(nameplatesHeighthealthCritter)
-					plate.typeIcon:SetWidth(nameplatesHeighthealthCritter)
-					plate.power:SetWidth(nameplateWidthCritter)
-					
-					plate.selectionGlow:SetWidth(nameplateWidthCritter + 60)
-					plate.selectionGlow:SetHeight(nameplatesHeighthealthCritter + 60)
-				else
-					if isGrayLevel then
-						plate.health:SetWidth(nameplateWidthGrayLevel)
-						plate.power:SetWidth(nameplateWidthGrayLevel)
-						
-						plate.selectionGlow:SetWidth(nameplateWidthGrayLevel + 60)
-					end
-				end
-			else
-				plate.typeIcon.icon:SetTexture("Interface\\AddOns\\ShaguPlates\\img\\creaturetypes\\UNKNOWN.tga")
-				if isGrayLevel then
-					plate.health:SetWidth(nameplateWidthGrayLevel)
-					plate.power:SetWidth(nameplateWidthGrayLevel)
-					
-					plate.selectionGlow:SetWidth(nameplateWidthGrayLevel + 60)
-				end
-			end
-			plate.typeIcon.icon:SetTexCoord(.078, .92, .079, .937)
-			
-			if UnitIsTapped(unitstr) and not UnitIsTappedByPlayer(unitstr) then
-			  r, g, b, a = .5, .5, .5, .8
-			end
-		else
-			if isGrayLevel then
-				plate.health:SetWidth(nameplateWidthGrayLevel)
-				plate.power:SetWidth(nameplateWidthGrayLevel)
-			end
-			--plate.classIcon.icon:SetTexture("Interface\\AddOns\\ShaguPlates\\img\\classicons\\"..string.upper(class)..".tga")
-			local classr, classl, classt, classb = getClassPos(string.upper(class))
-			plate.classIcon.icon:SetTexCoord(classr, classl, classt, classb)
-			--plate.classIcon.icon:SetTexCoord(.078, .92, .079, .937)
-			plate.classIcon:Show()
-			
-			local race, raceEn = UnitRace(unitstr)
-			--print(name)
-			--print(raceEn)
-			--print(race)
-			local gender_code = UnitSex(unitstr)
-			--print(gender_code)
-			if gender_code == 3 then
-				plate.typeIcon.icon:SetTexture("Interface\\AddOns\\ShaguPlates\\img\\races\\"..string.lower(raceEn).."_female.tga")
-			else
-				plate.typeIcon.icon:SetTexture("Interface\\AddOns\\ShaguPlates\\img\\races\\"..string.lower(raceEn).."_male.tga")
-			end
-			
-			if (not (UnitInRaid(unitstr) or UnitInParty(unitstr))) then 
-				--r, g, b = UnitSelectionColor(unitstr)
-				--r, g, b, a = UnitSelectionColor(unitstr)	
+				plate.selectionGlow:Show()
 				
-				--print(name)
-				--print(UnitIsPVP(unitstr))
-				--print(UnitCanAttack("player", unitstr))
-
-				--r, g, b = 1, 1, 0
+				plate.name:SetTextColor(1,1,0,1)
+				plate.guild:SetTextColor(1,1,0,1)
 				
-				--local playerCanAttackUnit = UnitCanAttack("player", unitstr)
-				local unitCanAttackPlayer = UnitCanAttack(unitstr, "player")
-				local playerFaction = UnitFactionGroup("player")
-				local unitFaction = UnitFactionGroup(unitstr)
-				local playerIsPvP = UnitIsPVP("player")
-				local unitIsPvP = UnitIsPVP(unitstr)
+				-- plate:SetFrameStrata("LOW")
+				-- plate.target_strata = 1
 				
-				if (playerCanAttackUnit) and (not UnitCanAttackPlayer) then
-					r, g, b, a = 1, 1, 0, 0.99999779462814
-				elseif (not playerCanAttackUnit) and (not unitCanAttackPlayer) then
-					if (playerFaction == unitFaction) and (unitIsPvP) then
-						r, g, b, a = 0, 0.99999779462814, 0, 0.99999779462814
-					else
-						r, g, b, a = 0, 0, 0.99999779462814, 0.99999779462814
-					end
-				elseif (not playerCanAttackUnit) and (unitCanAttackPlayer) then
-					if ((playerFaction ~= unitFaction)) and (playerIsPvP) then
-						r, g, b, a = 0, 0, 0.99999779462814, 0.99999779462814
-					end
-				end
+				plate.isInMouseOver = true
+				--nameplates:OnDataChanged(plate)
 			end
 		end
-		
-		for i=1,16 do
-		  UpdateDebuffConfig(plate, i)
-		end
+		plate:SetScript("OnEnter", scrf)
 	end
 	
-	local unitMaxPower = UnitManaMax(unitstr)
-	
-	if not TotemIcon and unitMaxPower > 0 then
-		local unitPower = UnitMana(unitstr)
-		plate.power.text:SetText(string.format("%s", Abbreviate(unitPower)))
-		
-		local unitPowerType = UnitPowerType(unitstr)
-	
-		if unitPowerType == 0 then
-			plate.power:SetStatusBarColor(0, 0, 0.9, a)
-		elseif unitPowerType == 1 then
-			plate.power:SetStatusBarColor(1, 0, 0, a)
-		elseif unitPowerType == 2 or unitPowerType == 3 then
-			plate.power:SetStatusBarColor(1, 1, 0, a)
-		else
-			plate.power:SetStatusBarColor(1, 1, 0, a)
-		end
-		
-		plate.power:SetMinMaxValues(0,  unitMaxPower)
-		
-		if unitPowerType == 1 and unitPower < 1 then
-			plate.power:SetValue(unitMaxPower)
-			plate.power:SetStatusBarColor(0.5, 0, 0, a)
-		else
-			plate.power:SetValue(unitPower)
-		end
-		
-		plate.health.text:ClearAllPoints()
-		plate.health.text:SetPoint("RIGHT", plate.health, "RIGHT", -2, -4)
-		plate.level:ClearAllPoints()
-		plate.level:SetPoint("TOP", plate.typeIcon, "BOTTOM", 0, 0)
-		plate.power:Show()
-		plate.castbar:SetPoint("TOPLEFT", plate.power, "BOTTOMLEFT", 0, (-default_border*3)-4)
-		plate.castbar:SetPoint("TOPRIGHT", plate.power, "BOTTOMRIGHT", 0, (-default_border*3)-4)
-	else
-		plate.health.text:ClearAllPoints()
-		plate.health.text:SetPoint("RIGHT", plate.health, "RIGHT", -2, -8)
-		plate.level:ClearAllPoints()
-		plate.level:SetPoint("LEFT", plate.health, "LEFT", 3, -8)
-		plate.power:Hide()
-		plate.castbar:SetPoint("TOPLEFT", plate.health, "BOTTOMLEFT", 0, -default_border*3)
-		plate.castbar:SetPoint("TOPRIGHT", plate.health, "BOTTOMRIGHT", 0, -default_border*3)
-	end
-
-	plate.health:SetStatusBarColor(r, g, b, a)
-
-	if r ~= plate.cache.r or g ~= plate.cache.g or b ~= plate.cache.b then
-	 plate.health:SetStatusBarColor(r, g, b, a)
-	 plate.cache.r, plate.cache.g, plate.cache.b = r, g, b
-	end
-
 	-- update combopoints
 	for i=1, 5 do plate.combopoints[i]:Hide() end
 	if target and nameplatesCpdisplay then
@@ -1427,6 +1197,10 @@ nameplates.OnCreate = function(frame)
 	end
 
 	-- update debuffs
+	for i=1,16 do
+	  UpdateDebuffConfig(plate, i)
+	end
+	
 	local index = 1
 
 	if nameplatesShowdebuffs then
@@ -1483,6 +1257,491 @@ nameplates.OnCreate = function(frame)
 		plate.debuffs[i]:Hide()
 	  end
 	end
+	
+	------------- NO SCAN DISPLAY
+	if not TotemIcon then
+		--display minimal info
+		plate.name:SetText(originalPlateName.." [Awaiting scan...]")
+		plate.name:SetPoint("BOTTOM", plate, "TOP", 0, 0)
+		plate.name:Show()
+		
+		plate.guild:SetPoint("BOTTOM", plate, "TOP", 0, 0)
+		plate.guild:Hide()
+		
+		plate.level:SetText(originalPlateLevel)
+		plate.level:SetTextColor(levelDifficultyColor.r, levelDifficultyColor.g, levelDifficultyColor.b, 1)
+		plate.level:ClearAllPoints()
+		plate.level:SetPoint("LEFT", plate.health, "LEFT", 3, -8)
+		plate.level:Show()
+		
+		plate.health:SetPoint("TOP", plate.name, "BOTTOM", 0, healthoffset)
+		plate.health:SetWidth(nameplateWidth)
+		plate.health:SetHeight(nameplatesHeighthealth)
+		plate.health:SetStatusBarColor(redOriginal, greenOriginal, blueOriginal, 1)
+		plate.health.text:ClearAllPoints()
+		plate.health.text:SetPoint("RIGHT", plate.health, "RIGHT", -2, -8)
+		plate.health:Show()		
+		
+		plate.power:SetWidth(nameplateWidth)
+		plate.power:SetHeight(nameplatesHeightPower)
+		plate.power:Hide()
+		
+		plate.typeIcon:SetHeight(nameplatesHeighthealth)
+		plate.typeIcon:SetWidth(nameplatesHeighthealth)
+		plate.typeIcon:Hide()
+		
+		plate.classIcon:Hide()
+
+		plate.petHappiness:Hide()
+		
+		plate.combatIcon:SetPoint("LEFT", plate.name, "RIGHT", -0, -0)
+		plate.combatIcon:Hide()
+		
+		plate.selectionGlow:SetWidth(nameplateWidth + 60)
+		plate.selectionGlow:SetHeight(nameplatesHeighthealth + 60)
+		
+		plate.castbar:SetPoint("TOPLEFT", plate.health, "BOTTOMLEFT", 0, -default_border*3)
+		plate.castbar:SetPoint("TOPRIGHT", plate.health, "BOTTOMRIGHT", 0, -default_border*3)		
+		
+		plate.rarityIcon:SetPoint("RIGHT", plate.health, "LEFT", 26, -1)
+		
+		updateGuildDispaly(plate, guild)
+	end	
+	-------------
+	
+	if plate.wait_for_scan then
+		return
+	end
+	
+	------------- SCANNED DISPLAY
+	
+	if not TotemIcon then
+	
+		local unitMaxPower = UnitManaMax(unitstr)
+	
+		if (not isPlayer) then
+			scanTool:ClearLines()
+			scanTool:SetUnit(unitstr)
+			local scanTextLine2Text = scanTextLine2:GetText()
+			--if not ownerText then return nil end
+			--local owner, _ = string.split("'",ownerText)
+			
+			-- if (unitstr ~= nil) and UnitIsPossessed(unitstr) then
+				-- guild = "PET"
+			-- end
+			
+			if scanTextLine2Text and not string.find(scanTextLine2Text, "Level") then
+				--local owner, _ = string.split("'",ownerText)
+				guild = scanTextLine2Text
+			end
+		end
+	
+		plate.name:SetText(name)
+		plate.typeIcon:Show()
+		plate.classIcon:Show()
+		
+		plate.rarityIcon:SetPoint("RIGHT", plate.typeIcon, "LEFT", 26, -1)		
+		
+		if (not isPlayer) then
+			plate.classIcon:Hide()
+			local creatureType = UnitCreatureType(unitstr)
+			if (creatureType ~= nil and creatureType ~= "" and creatureType ~= "Not specified") then
+				plate.typeIcon.icon:SetTexture("Interface\\AddOns\\ShaguPlates\\img\\creaturetypes\\"..string.upper(UnitCreatureType(unitstr))..".tga")
+				
+				if creatureType == "Critter" then
+					plate.health:SetWidth(nameplateWidthCritter)
+					plate.health:SetHeight(nameplatesHeighthealthCritter)
+					plate.typeIcon:SetHeight(nameplatesHeighthealthCritter)
+					plate.typeIcon:SetWidth(nameplatesHeighthealthCritter)
+					plate.power:SetWidth(nameplateWidthCritter)
+					
+					plate.selectionGlow:SetWidth(nameplateWidthCritter + 60)
+					plate.selectionGlow:SetHeight(nameplatesHeighthealthCritter + 60)
+				else
+					if isGrayLevel then
+						plate.health:SetWidth(nameplateWidthGrayLevel)
+						plate.power:SetWidth(nameplateWidthGrayLevel)
+						
+						plate.selectionGlow:SetWidth(nameplateWidthGrayLevel + 60)
+					end
+				end
+			else
+				plate.typeIcon.icon:SetTexture("Interface\\AddOns\\ShaguPlates\\img\\creaturetypes\\UNKNOWN.tga")
+				if isGrayLevel then
+					plate.health:SetWidth(nameplateWidthGrayLevel)
+					plate.power:SetWidth(nameplateWidthGrayLevel)
+					
+					plate.selectionGlow:SetWidth(nameplateWidthGrayLevel + 60)
+				end
+			end
+			plate.typeIcon.icon:SetTexCoord(.078, .92, .079, .937)
+			
+			if UnitIsTapped(unitstr) and not UnitIsTappedByPlayer(unitstr) then
+				plate.health:SetStatusBarColor(.5, .5, .5, .8)
+			end
+			
+			local playerHasPetUI, playerPetIsHunterPet = HasPetUI()
+			if (playerHasPetUI and playerPetIsHunterPet and guild and string.find(guild, UnitName("player").."'s Pet")) then
+				petHappiness, petDamagePercentage, petLoyaltyRate = GetPetHappiness()
+				--plate.name:SetText(name.." happiness level: "..petHappiness)
+				
+				if (petHappiness == 1) then
+					plate.petHappiness.icon:SetTexCoord(0.375, 0.5625, 0, 0.359375)
+					plate.combatIcon:SetPoint("LEFT", plate.petHappiness, "RIGHT", -0, -0)
+					plate.petHappiness:Show()
+				elseif (petHappiness == 2) then
+					plate.petHappiness.icon:SetTexCoord(0.1875, 0.375, 0, 0.359375)
+					plate.combatIcon:SetPoint("LEFT", plate.petHappiness, "RIGHT", -0, -0)
+					plate.petHappiness:Show()
+				elseif (petHappiness == 3) then
+					-- plate.petHappiness.icon:SetTexCoord(0, 0.1875, 0, 0.359375)
+					-- plate.combatIcon:SetPoint("LEFT", plate.petHappiness, "RIGHT", -0, -0)
+					-- plate.petHappiness:Show()
+					plate.petHappiness:Hide()
+				end
+			end
+		end
+		
+		if (isPlayer) then
+			if isGrayLevel then
+				plate.health:SetWidth(nameplateWidthGrayLevel)
+				plate.power:SetWidth(nameplateWidthGrayLevel)
+			end
+			--plate.classIcon.icon:SetTexture("Interface\\AddOns\\ShaguPlates\\img\\classicons\\"..string.upper(class)..".tga")
+			local classr, classl, classt, classb = getClassPos(string.upper(class))
+			plate.classIcon.icon:SetTexCoord(classr, classl, classt, classb)
+			--plate.classIcon.icon:SetTexCoord(.078, .92, .079, .937)
+			plate.classIcon:Show()
+			
+			--print(name)
+			--print(raceEn)
+			--print(race)
+			local gender_code = UnitSex(unitstr)
+			--print(gender_code)
+			if gender_code == 3 then
+				plate.typeIcon.icon:SetTexture("Interface\\AddOns\\ShaguPlates\\img\\races\\"..string.lower(raceEn).."_female.tga")
+			else
+				plate.typeIcon.icon:SetTexture("Interface\\AddOns\\ShaguPlates\\img\\races\\"..string.lower(raceEn).."_male.tga")
+			end
+			
+			if (not (UnitInRaid(unitstr) or UnitInParty(unitstr))) then 
+				--r, g, b = UnitSelectionColor(unitstr)
+				--r, g, b, a = UnitSelectionColor(unitstr)	
+				
+				--print(name)
+				--print(UnitIsPVP(unitstr))
+				--print(UnitCanAttack("player", unitstr))
+
+				--r, g, b = 1, 1, 0
+				
+				--local playerCanAttackUnit = UnitCanAttack("player", unitstr)
+				local unitCanAttackPlayer = UnitCanAttack(unitstr, "player")
+				local playerFaction = UnitFactionGroup("player")
+				local unitFaction = UnitFactionGroup(unitstr)
+				local playerIsPvP = UnitIsPVP("player")
+				local unitIsPvP = UnitIsPVP(unitstr)
+				
+				if (playerCanAttackUnit) and (not UnitCanAttackPlayer) then
+					plate.health:SetStatusBarColor(1, 1, 0, 0.99999779462814)
+				elseif (not playerCanAttackUnit) and (not unitCanAttackPlayer) then
+					if (playerFaction == unitFaction) and (unitIsPvP) then
+						plate.health:SetStatusBarColor(0, 0.99999779462814, 0, 0.99999779462814)
+					else
+						plate.health:SetStatusBarColor(0, 0, 0.99999779462814, 0.99999779462814)
+					end
+				elseif (not playerCanAttackUnit) and (unitCanAttackPlayer) then
+					if ((playerFaction ~= unitFaction)) and (playerIsPvP) then
+						plate.health:SetStatusBarColor(0, 0, 0.99999779462814, 0.99999779462814)
+					end
+				else
+					--TODO UNHANDLED
+					plate.health:SetStatusBarColor(1, 1, 1, 1)
+				end
+			end
+		end
+		
+		
+		
+		
+		if unitMaxPower > 0 then
+			local unitPower = UnitMana(unitstr)
+			plate.power.text:SetText(string.format("%s", Abbreviate(unitPower)))
+			
+			local unitPowerType = UnitPowerType(unitstr)
+		
+			if unitPowerType == 0 then
+				plate.power:SetStatusBarColor(0, 0, 0.9, a)
+			elseif unitPowerType == 1 then
+				plate.power:SetStatusBarColor(1, 0, 0, a)
+			elseif unitPowerType == 2 or unitPowerType == 3 then
+				plate.power:SetStatusBarColor(1, 1, 0, a)
+			else
+				plate.power:SetStatusBarColor(1, 1, 0, a)
+			end
+			
+			plate.power:SetMinMaxValues(0,  unitMaxPower)
+			
+			if unitPowerType == 1 and unitPower < 1 then
+				plate.power:SetValue(unitMaxPower)
+				plate.power:SetStatusBarColor(0.5, 0, 0, a)
+			else
+				plate.power:SetValue(unitPower)
+			end
+			
+			plate.health.text:ClearAllPoints()
+			plate.health.text:SetPoint("RIGHT", plate.health, "RIGHT", -2, -4)
+			plate.level:ClearAllPoints()
+			plate.level:SetPoint("TOP", plate.typeIcon, "BOTTOM", 0, 0)
+			plate.power:Show()
+			plate.castbar:SetPoint("TOPLEFT", plate.power, "BOTTOMLEFT", 0, (-default_border*3)-4)
+			plate.castbar:SetPoint("TOPRIGHT", plate.power, "BOTTOMRIGHT", 0, (-default_border*3)-4)
+		else
+			plate.health.text:ClearAllPoints()
+			plate.health.text:SetPoint("RIGHT", plate.health, "RIGHT", -2, -8)
+			plate.level:ClearAllPoints()
+			plate.level:SetPoint("LEFT", plate.health, "LEFT", 3, -8)
+			plate.power:Hide()
+			plate.castbar:SetPoint("TOPLEFT", plate.health, "BOTTOMLEFT", 0, -default_border*3)
+			plate.castbar:SetPoint("TOPRIGHT", plate.health, "BOTTOMRIGHT", 0, -default_border*3)
+		end
+		
+		
+		
+		
+		
+		
+		
+		if (UnitAffectingCombat(unitstr)) then
+			plate.combatIcon:Show()
+		else
+			plate.combatIcon:Hide()
+		end
+		
+		if CheckInteractDistance(unitstr, 3) then
+			plate.distanceToPlayer = 9.9
+		elseif CheckInteractDistance(unitstr, 2) then
+			plate.distanceToPlayer = 11.11
+		elseif CheckInteractDistance(unitstr, 4) then
+			plate.distanceToPlayer = 28
+		else
+			plate.distanceToPlayer = 999
+		end
+		
+		if plate.distanceToPlayer < 10 then
+			plate.desiredYOffset = -40
+		elseif plate.distanceToPlayer < 30 then
+			plate.desiredYOffset = -20
+		else
+			plate.desiredYOffset = 0
+		end
+		
+		
+		
+		updateGuildDispaly(plate, guild)
+		
+		return
+	end
+	
+	-------------
+
+	-- print(initialized)
+	-- print(parentcount)
+	-- print(platecount)
+	--print(table.getn(registry))
+
+	-- init other variables
+	-- local isGrayLevel = false
+	-- local difficultyColor = {r=1, g=1, b=1}
+	
+	-- if ulevel ~= nil then
+		-- if (ulevel > 0) then
+			-- difficultyColor = GetDifficultyColor(ulevel)
+			-- if (difficultyColor ~= nil) then
+				-- isGrayLevel = difficultyColor.r == 0.5 and difficultyColor.g == 0.5 and difficultyColor.b == 0.5
+			-- else
+				-- difficultyColor = {r=1, g=1, b=1}
+			-- end
+		-- else
+			-- difficultyColor = {r=0.5, g=0.5, b=0.5}
+		-- end
+	-- end
+	
+	-- if (unitstr ~= nil) then
+		--print("ulevel1: "..ulevel)
+		--print(ulevel)
+		
+		-- plate.unitstr = unitstr
+		
+		-- if CheckInteractDistance(unitstr, 3) then
+			-- plate.distanceToPlayer = 9.9
+		-- elseif CheckInteractDistance(unitstr, 2) then
+			-- plate.distanceToPlayer = 11.11
+		-- elseif CheckInteractDistance(unitstr, 4) then
+			-- plate.distanceToPlayer = 28
+		-- else
+			-- plate.distanceToPlayer = 999
+		-- end
+		
+		-- if plate.distanceToPlayer < 10 then
+			-- plate.desiredYOffset = -40
+		-- elseif plate.distanceToPlayer < 30 then
+			-- plate.desiredYOffset = -20
+		-- else
+			-- plate.desiredYOffset = 0
+		-- end
+		
+		-- if plate.currentYOffset == nil then
+			-- plate.currentYOffset = plate.desiredYOffset
+		-- end
+		
+		-- if plate.distanceToPlayer < 12 then
+			-- plate:SetPoint("TOP", plate.parent, "TOP", 0, -50)
+		-- elseif plate.distanceToPlayer < 30 then
+			-- plate:SetPoint("TOP", plate.parent, "TOP", 0, -20)
+		-- else
+			-- plate:SetPoint("TOP", plate.parent, "TOP", 0, 0)
+		-- end
+		
+	-- end
+
+	--guild = GetGuildInfo(unitstr)
+
+	--local TotemIcon = TotemPlate(name)
+	--plate.classIcon:SetTexture("Interface\\Icons\\" .. "Image:Spell_Fire_SearingTotem")
+	--plate.classIcon:Show()
+
+	
+	-- plate.level:SetTextColor(difficultyColor.r, difficultyColor.g, difficultyColor.b, 1)
+
+	-- if (unitstr ~= nil) and not player and not TotemIcon then
+		-- scanTool:ClearLines()
+		-- scanTool:SetUnit(unitstr)
+		-- local scanTextLine2Text = scanTextLine2:GetText()
+		-- --if not ownerText then return nil end
+		-- --local owner, _ = string.split("'",ownerText)
+		
+		-- -- if (unitstr ~= nil) and UnitIsPossessed(unitstr) then
+			-- -- guild = "PET"
+		-- -- end
+		
+		-- if scanTextLine2Text and not string.find(scanTextLine2Text, "Level") then
+			-- --local owner, _ = string.split("'",ownerText)
+			-- guild = scanTextLine2Text
+		-- end
+	-- end
+
+	--guild = nil
+	
+
+	--local unittype = GetUnitType(red, green, blue) or "ENEMY_NPC"
+
+	--if player and unittype == "ENEMY_NPC" then 
+	-- if (unitstr == nil) then
+		-- unitstr is null
+	-- else
+		
+		-- if not player then
+			-- plate.classIcon:Hide()
+			-- local creatureType = UnitCreatureType(unitstr)
+			-- if (creatureType ~= nil and creatureType ~= "" and creatureType ~= "Not specified") then
+				-- plate.typeIcon.icon:SetTexture("Interface\\AddOns\\ShaguPlates\\img\\creaturetypes\\"..string.upper(UnitCreatureType(unitstr))..".tga")
+				
+				-- if creatureType == "Critter" then
+					-- plate.health:SetWidth(nameplateWidthCritter)
+					-- plate.health:SetHeight(nameplatesHeighthealthCritter)
+					-- plate.typeIcon:SetHeight(nameplatesHeighthealthCritter)
+					-- plate.typeIcon:SetWidth(nameplatesHeighthealthCritter)
+					-- plate.power:SetWidth(nameplateWidthCritter)
+					
+					-- plate.selectionGlow:SetWidth(nameplateWidthCritter + 60)
+					-- plate.selectionGlow:SetHeight(nameplatesHeighthealthCritter + 60)
+				-- else
+					-- if isGrayLevel then
+						-- plate.health:SetWidth(nameplateWidthGrayLevel)
+						-- plate.power:SetWidth(nameplateWidthGrayLevel)
+						
+						-- plate.selectionGlow:SetWidth(nameplateWidthGrayLevel + 60)
+					-- end
+				-- end
+			-- else
+				-- plate.typeIcon.icon:SetTexture("Interface\\AddOns\\ShaguPlates\\img\\creaturetypes\\UNKNOWN.tga")
+				-- if isGrayLevel then
+					-- plate.health:SetWidth(nameplateWidthGrayLevel)
+					-- plate.power:SetWidth(nameplateWidthGrayLevel)
+					
+					-- plate.selectionGlow:SetWidth(nameplateWidthGrayLevel + 60)
+				-- end
+			-- end
+			-- plate.typeIcon.icon:SetTexCoord(.078, .92, .079, .937)
+			
+			-- if UnitIsTapped(unitstr) and not UnitIsTappedByPlayer(unitstr) then
+			  -- r, g, b, a = .5, .5, .5, .8
+			-- end
+		-- else
+		-- if isPlayer then
+			-- if isGrayLevel then
+				-- plate.health:SetWidth(nameplateWidthGrayLevel)
+				-- plate.power:SetWidth(nameplateWidthGrayLevel)
+			-- end
+			-- --plate.classIcon.icon:SetTexture("Interface\\AddOns\\ShaguPlates\\img\\classicons\\"..string.upper(class)..".tga")
+			-- local classr, classl, classt, classb = getClassPos(string.upper(class))
+			-- plate.classIcon.icon:SetTexCoord(classr, classl, classt, classb)
+			-- --plate.classIcon.icon:SetTexCoord(.078, .92, .079, .937)
+			-- plate.classIcon:Show()
+			
+			-- --print(name)
+			-- --print(raceEn)
+			-- --print(race)
+			-- local gender_code = UnitSex(unitstr)
+			-- --print(gender_code)
+			-- if gender_code == 3 then
+				-- plate.typeIcon.icon:SetTexture("Interface\\AddOns\\ShaguPlates\\img\\races\\"..string.lower(raceEn).."_female.tga")
+			-- else
+				-- plate.typeIcon.icon:SetTexture("Interface\\AddOns\\ShaguPlates\\img\\races\\"..string.lower(raceEn).."_male.tga")
+			-- end
+			
+			-- if (not (UnitInRaid(unitstr) or UnitInParty(unitstr))) then 
+				-- --r, g, b = UnitSelectionColor(unitstr)
+				-- --r, g, b, a = UnitSelectionColor(unitstr)	
+				
+				-- --print(name)
+				-- --print(UnitIsPVP(unitstr))
+				-- --print(UnitCanAttack("player", unitstr))
+
+				-- --r, g, b = 1, 1, 0
+				
+				-- --local playerCanAttackUnit = UnitCanAttack("player", unitstr)
+				-- local unitCanAttackPlayer = UnitCanAttack(unitstr, "player")
+				-- local playerFaction = UnitFactionGroup("player")
+				-- local unitFaction = UnitFactionGroup(unitstr)
+				-- local playerIsPvP = UnitIsPVP("player")
+				-- local unitIsPvP = UnitIsPVP(unitstr)
+				
+				-- if (playerCanAttackUnit) and (not UnitCanAttackPlayer) then
+					-- r, g, b, a = 1, 1, 0, 0.99999779462814
+				-- elseif (not playerCanAttackUnit) and (not unitCanAttackPlayer) then
+					-- if (playerFaction == unitFaction) and (unitIsPvP) then
+						-- r, g, b, a = 0, 0.99999779462814, 0, 0.99999779462814
+					-- else
+						-- r, g, b, a = 0, 0, 0.99999779462814, 0.99999779462814
+					-- end
+				-- elseif (not playerCanAttackUnit) and (unitCanAttackPlayer) then
+					-- if ((playerFaction ~= unitFaction)) and (playerIsPvP) then
+						-- r, g, b, a = 0, 0, 0.99999779462814, 0.99999779462814
+					-- end
+				-- end
+			-- end
+		-- end
+	-- end
+	
+	-- local unitMaxPower = UnitManaMax(unitstr)
+
+	-- plate.health:SetStatusBarColor(r, g, b, a)
+
+	-- if r ~= plate.cache.r or g ~= plate.cache.g or b ~= plate.cache.b then
+	 -- plate.health:SetStatusBarColor(r, g, b, a)
+	 -- plate.cache.r, plate.cache.g, plate.cache.b = r, g, b
+	-- end
 
 	end
 
@@ -1571,7 +1830,7 @@ nameplates.OnCreate = function(frame)
 	r, g, b = r + .3, g + .3, b + .3
 	if r + g + b ~= nameplate.cache.levelcolor then
 	  nameplate.cache.levelcolor = r + g + b
-	  nameplate.level:SetTextColor(r,g,b,1)
+	  -- nameplate.level:SetTextColor(r,g,b,1)
 	  update = true
 	end
 
@@ -1657,23 +1916,39 @@ nameplates.OnCreate = function(frame)
 
 	-- set nameplate game settings
 	nameplates.SetGameVariables = function()
-	-- update visibility (hostile)
-	if nameplatesShowhostile then
-	  _G.NAMEPLATES_ON = true
-	  ShowNameplates()
-	else
-	  _G.NAMEPLATES_ON = nil
-	  HideNameplates()
-	end
+		-- update visibility (hostile)
+		if nameplatesShowhostile then
+		  _G.NAMEPLATES_ON = true
+		  ShowNameplates()
+		else
+		  _G.NAMEPLATES_ON = nil
+		  HideNameplates()
+		end
 
-	-- update visibility (hostile)
-	if nameplatesShowfriendly then
-	  _G.FRIENDNAMEPLATES_ON = true
-	  ShowFriendNameplates()
-	else
-	  _G.FRIENDNAMEPLATES_ON = nil
-	  HideFriendNameplates()
-	end
+		-- update visibility (hostile)
+		if nameplatesShowfriendly then
+		  _G.FRIENDNAMEPLATES_ON = true
+		  ShowFriendNameplates()
+		else
+		  _G.FRIENDNAMEPLATES_ON = nil
+		  HideFriendNameplates()
+		end
+		
+		
+		-- _G.NAMEPLATES_ON = true
+		-- ShowNameplates()
+		
+		-- _G.FRIENDNAMEPLATES_ON = true
+		-- ShowFriendNameplates()
+		
+		
+		_G.NAMEPLATES_ON = true
+		ShowNameplates()
+		
+		_G.FRIENDNAMEPLATES_ON = nil
+		HideFriendNameplates()
+		
+		
 	end
 
 	nameplates:SetGameVariables()
@@ -1717,9 +1992,35 @@ nameplates.OnCreate = function(frame)
 		this:SetWidth(1)
 		this:SetHeight(1)
 		
+		if plate.desiredYOffset and plate.currentYOffset then
+			--print("GetCameraZoom(): "..GetCameraZoom())
+		
+		
+			local offsetAnimationStep = 1.0
+			
+			if math.abs(plate.desiredYOffset-plate.currentYOffset) > 20 then
+				plate.currentYOffset = plate.desiredYOffset
+			end
+		
+			if (math.abs(plate.desiredYOffset-plate.currentYOffset) <= offsetAnimationStep) then
+				plate.currentYOffset = plate.desiredYOffset
+			else
+				
+			end
+			
+			if plate.desiredYOffset-plate.currentYOffset > 0 then
+				plate.currentYOffset = plate.currentYOffset + offsetAnimationStep
+			elseif plate.desiredYOffset-plate.currentYOffset < 0 then
+				plate.currentYOffset = plate.currentYOffset - offsetAnimationStep
+			end
+			
+			plate:SetPoint("TOP", plate.parent, "TOP", 0, plate.currentYOffset)
+			
+		end
+		
 		-- local zoom = GetCameraZoom()
 		
-		plate:SetPoint("TOP", plate.parent, "TOP", 0, nameplateOffsetY)
+		--plate:SetPoint("TOP", plate.parent, "TOP", 0, nameplateOffsetY)
 		-- print("zoom")
 		-- print("zoom: "..zoom)
 		
