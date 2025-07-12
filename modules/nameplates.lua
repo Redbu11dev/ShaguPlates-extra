@@ -1530,7 +1530,7 @@ nameplates.OnCreate = function(frame)
 		if plate.distanceToPlayer < 10 then
 			plate.desiredYOffset = -40
 		elseif plate.distanceToPlayer < 30 then
-			plate.desiredYOffset = -20
+			plate.desiredYOffset = -10
 		else
 			plate.desiredYOffset = 0
 		end
@@ -1998,7 +1998,7 @@ nameplates.OnCreate = function(frame)
 		
 			local offsetAnimationStep = 1.0
 			
-			if math.abs(plate.desiredYOffset-plate.currentYOffset) > 20 then
+			if math.abs(plate.desiredYOffset-plate.currentYOffset) > 30 then
 				plate.currentYOffset = plate.desiredYOffset
 			end
 		
