@@ -1121,7 +1121,8 @@ nameplates.OnCreate = function(frame)
 		return
 	else
 		plate.name:SetParent(plate.health)
-		plate.glow:SetPoint("LEFT", plate.typeIcon, "LEFT", -30, 0)
+		plate.glow:SetPoint("LEFT", plate.health, "LEFT", -30, 0)
+		plate.glow2:SetPoint("RIGHT", plate.health, "RIGHT", 30, 0)
 		
 		plate.totem:Hide()
 	end
@@ -1277,7 +1278,7 @@ nameplates.OnCreate = function(frame)
 		plate.health:SetPoint("TOP", plate.name, "BOTTOM", 0, healthoffset)
 		plate.health:SetWidth(nameplateWidth)
 		plate.health:SetHeight(nameplatesHeighthealth)
-		plate.health:SetStatusBarColor(redOriginal, greenOriginal, blueOriginal, 1)
+		plate.health:SetStatusBarColor(redOriginal, greenOriginal, blueOriginal, 0.99999779462814)
 		plate.health.text:ClearAllPoints()
 		plate.health.text:SetPoint("RIGHT", plate.health, "RIGHT", -2, -8)
 		plate.health:Show()		
@@ -1455,10 +1456,17 @@ nameplates.OnCreate = function(frame)
 					end
 				else
 					--TODO UNHANDLED
-					plate.health:SetStatusBarColor(1, 1, 1, 1)
+					plate.health:SetStatusBarColor(1, 1, 1, 0.99999779462814)
 				end
+			else
+				--unit is in your party or raid
+				plate.health:SetStatusBarColor(0.4, 0.6, 1, 0.99999779462814)
 			end
 		end
+		
+		
+		plate.glow:SetPoint("LEFT", plate.typeIcon, "LEFT", -30, 0)
+		plate.glow2:SetPoint("RIGHT", plate.health, "RIGHT", 30, 0)
 		
 		
 		
@@ -1470,20 +1478,20 @@ nameplates.OnCreate = function(frame)
 			local unitPowerType = UnitPowerType(unitstr)
 		
 			if unitPowerType == 0 then
-				plate.power:SetStatusBarColor(0, 0, 0.9, a)
+				plate.power:SetStatusBarColor(0, 0, 0.9, 0.99999779462814)
 			elseif unitPowerType == 1 then
-				plate.power:SetStatusBarColor(1, 0, 0, a)
+				plate.power:SetStatusBarColor(1, 0, 0, 0.99999779462814)
 			elseif unitPowerType == 2 or unitPowerType == 3 then
-				plate.power:SetStatusBarColor(1, 1, 0, a)
+				plate.power:SetStatusBarColor(1, 1, 0, 0.99999779462814)
 			else
-				plate.power:SetStatusBarColor(1, 1, 0, a)
+				plate.power:SetStatusBarColor(1, 1, 0, 0.99999779462814)
 			end
 			
 			plate.power:SetMinMaxValues(0,  unitMaxPower)
 			
 			if unitPowerType == 1 and unitPower < 1 then
 				plate.power:SetValue(unitMaxPower)
-				plate.power:SetStatusBarColor(0.5, 0, 0, a)
+				plate.power:SetStatusBarColor(0.5, 0, 0, 0.99999779462814)
 			else
 				plate.power:SetValue(unitPower)
 			end
