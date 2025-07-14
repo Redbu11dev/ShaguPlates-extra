@@ -27,7 +27,7 @@ Features:
 - Player race icons
 - Player class icons
 - "in combat" indicator on an NPC/player nameplate
-- Hunter pet happines indicator (only for your own pet)
+- Hunter pet happines indicator (only for your own pet, and only if not happy)
 
 
 ![image](https://github.com/user-attachments/assets/8842a386-0df2-40db-864f-4d4fbe3c20b2)
