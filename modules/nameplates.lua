@@ -1130,38 +1130,42 @@ nameplates.OnCreate = function(frame)
 	--TOTEM END
 	
 	--RARITY
-	plate.rarityIcon.icon:SetTexture("Interface\\AddOns\\ShaguPlates\\img\\frame_elite")
-	plate.rarityIconR.icon:SetTexture("Interface\\AddOns\\ShaguPlates\\img\\frame_elite")
-	
-	if elite == "elite" then
-		plate.rarityIcon.icon:SetVertexColor(1, 1, 0, 1)
-		plate.rarityIcon:Show()
-		plate.rarityIconR.icon:SetVertexColor(1, 1, 0, 1)
-		plate.rarityIconR:Show()
-	elseif elite == "rareelite" then
-		plate.rarityIcon.icon:SetVertexColor(1, 1, 1, 1)
-		plate.rarityIcon:Show()
-		plate.rarityIconR.icon:SetVertexColor(1, 1, 1, 1)
-		plate.rarityIconR:Show()
-	elseif elite == "rare" then
-		plate.rarityIcon.icon:SetTexture("Interface\\AddOns\\ShaguPlates\\img\\frame_rare")
-		plate.rarityIconR.icon:SetTexture("Interface\\AddOns\\ShaguPlates\\img\\frame_rare")
-		plate.rarityIcon.icon:SetVertexColor(1, 1, 1, 1)
-		plate.rarityIcon:Show()
-		plate.rarityIconR.icon:SetVertexColor(1, 1, 1, 1)
-		plate.rarityIconR:Show()
-	elseif elite == "boss" then
-		plate.rarityIcon.icon:SetVertexColor(0.5, 0, 0, 1)
-		plate.rarityIcon:Show()
-		plate.rarityIconR.icon:SetVertexColor(0.5, 0, 0, 1)
-		plate.rarityIconR:Show()
-	else
+	if (isPlayer) then
 		plate.rarityIcon:Hide()
 		plate.rarityIconR:Hide()
+	else
+		plate.rarityIcon.icon:SetTexture("Interface\\AddOns\\ShaguPlates\\img\\frame_elite")
+		plate.rarityIconR.icon:SetTexture("Interface\\AddOns\\ShaguPlates\\img\\frame_elite")
+		
+		if elite == "elite" then
+			plate.rarityIcon.icon:SetVertexColor(1, 1, 0, 1)
+			plate.rarityIcon:Show()
+			plate.rarityIconR.icon:SetVertexColor(1, 1, 0, 1)
+			plate.rarityIconR:Show()
+		elseif elite == "rareelite" then
+			plate.rarityIcon.icon:SetVertexColor(1, 1, 1, 1)
+			plate.rarityIcon:Show()
+			plate.rarityIconR.icon:SetVertexColor(1, 1, 1, 1)
+			plate.rarityIconR:Show()
+		elseif elite == "rare" then
+			plate.rarityIcon.icon:SetTexture("Interface\\AddOns\\ShaguPlates\\img\\frame_rare")
+			plate.rarityIconR.icon:SetTexture("Interface\\AddOns\\ShaguPlates\\img\\frame_rare")
+			plate.rarityIcon.icon:SetVertexColor(1, 1, 1, 1)
+			plate.rarityIcon:Show()
+			plate.rarityIconR.icon:SetVertexColor(1, 1, 1, 1)
+			plate.rarityIconR:Show()
+		elseif elite == "boss" then
+			plate.rarityIcon.icon:SetVertexColor(0.5, 0, 0, 1)
+			plate.rarityIcon:Show()
+			plate.rarityIconR.icon:SetVertexColor(0.5, 0, 0, 1)
+			plate.rarityIconR:Show()
+		else
+			plate.rarityIcon:Hide()
+			plate.rarityIconR:Hide()
+		end
 	end
 	--RARITY END
 	
-	-- local playerCanAttackUnit = UnitCanAttack("player", unitstr)
 	if plate.OnEnterScript == nil then
 		local scrf = function()
 			if not IsMouselooking() then			
@@ -1435,7 +1439,7 @@ nameplates.OnCreate = function(frame)
 
 				--r, g, b = 1, 1, 0
 				
-				--local playerCanAttackUnit = UnitCanAttack("player", unitstr)
+				local playerCanAttackUnit = UnitCanAttack("player", unitstr)
 				local unitCanAttackPlayer = UnitCanAttack(unitstr, "player")
 				local playerFaction = UnitFactionGroup("player")
 				local unitFaction = UnitFactionGroup(unitstr)
