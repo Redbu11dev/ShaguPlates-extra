@@ -1,5 +1,8 @@
 	local _G = getfenv(0)
 	
+	-- local TextLayer = CreateFrame("Frame", nil, UIParent)
+	-- TextLayer:SetFrameLevel(200) -- high enough to be on top of all plates
+	
 	ShaguPlates:RegisterModule("nameplates", "vanilla:tbc", function ()
 	-- disable original castbars
 	pcall(SetCVar, "ShowVKeyCastbar", 0)
@@ -282,8 +285,28 @@
 	  if not f:GetRegions() then return end
 	  return f:GetRegions():GetTexture() == [[Interface\Tooltips\ChatBubble-Background]]
 	end
+	
+	
+	
+	local updateCustomBalloonText = function(f, text)	
+		local minHeight = 40
+	
+		local minWidth = 50
+		local maxWidth = 300
+		f.chatBubble.fontMeasure:SetText(text)
+	
+		f.chatBubble.font:SetText(text)
+		f.chatBubble.font:SetTextColor(f.textstring:GetTextColor())
+		
+		local maxOfMin = math.max(minWidth, f.chatBubble.fontMeasure:GetWidth())
+		f.chatBubble.font:SetWidth(math.min(maxOfMin, maxWidth))
+		
+		f.chatBubble:SetWidth(f.chatBubble.font:GetWidth() + 48)
+		f.chatBubble:SetHeight(math.max(f.chatBubble.font:GetHeight(), minHeight) + 32)
+	end
 
-	local styleBalloon = function(f)
+	local styleBalloon = function(f)	
+	
 	  local r = {f:GetRegions()}
 	  for _, v in pairs(r) do
 		  if  v:GetObjectType() == 'Texture' then
@@ -301,8 +324,70 @@
 	  end
 	  -- if not string.find(f.textstring:GetText(), "\n\n\n\n") then
 		-- f.textstring:SetText(f.textstring:GetText().."\n\n\n\n")
-	  -- end
+	  -- end  
+	  
 	  if not f.skinned then
+	  
+		-- f:Hide()
+		
+		local r = {f:GetRegions()}
+		  for _, v in pairs(r) do
+			  v:Hide()
+		  end
+		
+		f.chatBubble = CreateFrame("Frame", nil, f)
+		f.chatBubble:SetHeight(5)
+		f.chatBubble:SetWidth(5)
+		f.chatBubble:SetPoint("BOTTOM", f, "TOP", 0, 0)
+		
+		-- f.chatBubble:SetBackdrop({
+		  -- bgFile = "Interface\\Buttons\\WHITE8X8",
+		  -- edgeFile = "Interface\\Buttons\\WHITE8X8",
+		  -- edgeSize = 0.2,
+		-- })
+		-- f.chatBubble:SetBackdropColor(0,0,0,0.8)
+		-- f.chatBubble:SetBackdropBorderColor(1,1,1,1)
+		
+		local insets = 16 --8
+		
+		f.chatBubble:SetBackdrop({
+			bgFile = "Interface\\Tooltips\\ChatBubble-Background",
+			edgeFile = "Interface\\Tooltips\\ChatBubble-Backdrop",
+			tile = true,
+			tileSize = 16,
+			edgeSize = 16,
+			insets = { left = insets, right = insets, top = insets, bottom = insets }
+		})
+		f.chatBubble:SetBackdropColor(1,1,1,1)
+		f.chatBubble:SetBackdropBorderColor(1,1,1,1)
+		
+		-- f.chatBubble.border = f.chatBubble:CreateTexture(nil, "BORDER")
+		-- f.chatBubble.border:SetTexture("Interface\\Tooltips\\ChatBubble-Backdrop")
+		-- f.chatBubble.border:SetPoint("TOPLEFT", -8, 8)
+		-- f.chatBubble.border:SetPoint("BOTTOMRIGHT", 8, -8)
+		
+		f.chatBubble.fontMeasure = f.chatBubble:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+		f.chatBubble.font = f.chatBubble:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+		--f.chatBubble.font:SetFont("Interface\\AddOns\\ShaguPlates\\fonts\\francois.ttf", 20, "OUTLINE")
+		-- f.chatBubble.font:SetWidth(300)
+	
+		updateCustomBalloonText(f, f.textstring:GetText())
+		
+		-- f.chatBubble.font:SetPoint("TOPLEFT", f.chatBubble, "TOPLEFT", 16, -16)
+		-- f.chatBubble.font:SetPoint("TOPRIGHT", f.chatBubble, "TOPRIGHT", -16, -16)
+		-- f.chatBubble.font:SetJustifyV("CENTER")
+		
+		f.chatBubble.font:SetPoint("CENTER", f.chatBubble, "CENTER", 0, 0)
+		f.chatBubble.font:SetJustifyH("CENTER")
+		
+		f.chatBubble.tail = f.chatBubble:CreateTexture(nil, "OVERLAY")
+		f.chatBubble.tail:SetTexture("Interface/Tooltips/ChatBubble-Tail")
+		f.chatBubble.tail:SetWidth(24)
+		f.chatBubble.tail:SetHeight(18)
+		f.chatBubble.tail:SetPoint("TOP", f.chatBubble, "BOTTOM", -20, 4)
+		f.chatBubble:Show()
+	  
+		-- OffsetBubble(f, 50)
 	  
 	  
 		-- local BACKDROP = {  bgFile = [[Interface\Tooltips\UI-Tooltip-Background]],
@@ -330,48 +415,15 @@
 		--f:SetBackdropColor(0, 0, 1, .5)
 		
 		f.textstring:SetFont(STANDARD_TEXT_FONT, 10)
-		--f.textstring:SetText("wasdas: "..f.textstring:GetText())
-		--local point, relativeTo, relativePoint, xOfs, yOfs = f:GetPoint(n)
-		--f:SetPoint(point, relativeTo, relativePoint, xOfs, yOfs+40)
-
-		--local parx = f.GetParent()
 		
-		-- f.parent:SetDrawLayer("OVERLAY")
-		-- f.parent:SetFrameLevel(4)
-		-- f.parent:SetFrameStrata("TOOLTIP")
-
-		-- local numpoints = f:GetNumPoints()
-		-- for i=1, numpoints do
-			-- --local point, relativeTo, relativePoint, xOfs, yOfs = f:GetPoint(i)
-			-- --f:SetPoint(point, relativeTo, relativePoint, xOfs, yOfs+40)
-			
-			-- local point, relativeTo, relativePoint, xOfs, yOfs = f:GetPoint(i)
-			-- if i == 1 then
-				-- f:SetPoint(point, relativeTo, relativePoint, xOfs, yOfs)
-			-- else
-				-- f:SetPoint(point, relativeTo, relativePoint, xOfs, yOfs+40)
-			-- end
-		-- end
+		f:SetFrameStrata("LOW")
+		--f:SetFrameStrata("BACKGROUND")
 		
-		
-		--f:SetHeight(v:GetHeight() + 50)
-		
-		--f.textstring:SetText(f.textstring:GetText().."\n\n\n\n")
-		
-		-- f.textstring:SetSpacing(500)
-		
-		-- local numpointstxt = f.textstring:GetNumPoints()
-		-- for i=1, numpointstxt do
-			-- local point, relativeTo, relativePoint, xOfs, yOfs = f.textstring:GetPoint(i)
-			-- f.textstring:SetPoint(point, relativeTo, relativePoint, xOfs, yOfs+40)
-		-- end
-		
-		--f.parent:Show()
-
-		--local point, relativeTo, relativePoint, xOfs, yOfs = f:GetPoint(1)
-		--f:SetPoint(point, relativeTo, relativePoint, xOfs, yOfs+40)
 		f.skinned = true
 	  end
+	  updateCustomBalloonText(f, f.textstring:GetText())
+	  f:SetFrameLevel(10000)
+	  
 	end
 
 	local function UpdateDebuffConfig(nameplate, i)
@@ -420,6 +472,13 @@
 	nameplates:RegisterEvent("PLAYER_COMBO_POINTS")
 	nameplates:RegisterEvent("UNIT_AURA")
 	--nameplates:RegisterEvent("CHAT_MSG_ADDON")
+	nameplates:RegisterEvent("CHAT_MSG_SAY")
+	nameplates:RegisterEvent("CHAT_MSG_YELL")
+	nameplates:RegisterEvent("CHAT_MSG_PARTY")
+	nameplates:RegisterEvent("CHAT_MSG_PARTY_LEADER")
+	nameplates:RegisterEvent("CHAT_MSG_MONSTER_SAY")
+	nameplates:RegisterEvent("CHAT_MSG_MONSTER_YELL")
+	nameplates:RegisterEvent("CHAT_MSG_MONSTER_PARTY")
 	
 	local function explode(str, delimiter)
 		local result = {}
@@ -433,6 +492,18 @@
 		table.insert(result, string.sub(str, from))
 		return result
 	end
+	
+	-- local chatBubbleEvents = {
+		-- ["CHAT_MSG_SAY"]=true,
+		-- ["CHAT_MSG_YELL"]=true,
+		-- ["CHAT_MSG_PARTY"]=true,
+		-- ["CHAT_MSG_PARTY_LEADER"]=true,
+		-- ["CHAT_MSG_MONSTER_SAY"]=true,
+		-- ["CHAT_MSG_MONSTER_YELL"]=true,
+		-- ["CHAT_MSG_MONSTER_PARTY"]=true,
+	-- }
+	
+	-- local chatBubbleMessagesStoreMap = {}
 
 	nameplates:SetScript("OnEvent", function()
 		if event == "PLAYER_ENTERING_WORLD" then
@@ -440,6 +511,34 @@
 		else
 		  this.eventcache = true
 		end
+		
+		-- if chatBubbleEvents[event] then
+			-- --print("arg1"..arg1)--msg
+			-- --print("arg2"..arg2)--name
+			-- --print(""..platexx.original.name:GetText())
+			-- local parentcountx = WorldFrame:GetNumChildren()
+			-- for i = 1, parentcountx do
+				-- local platexx = _G["pfNamePlate" .. i]
+				-- if platexx and platexx.original.name:GetText()==arg2 then
+					-- --store
+					-- local objMsgStore = {}
+					-- objMsgStore.msg = arg1
+					-- objMsgStore.expirationTime = time() + 7
+					
+					-- chatBubbleMessagesStoreMap[""..arg2] = objMsgStore
+				
+					-- -- platexx.chatBubble.font:SetText(arg1)
+					
+					-- -- local h = platexx.chatBubble.font:GetHeight()
+					-- -- platexx.chatBubble:SetWidth(520)
+					-- -- platexx.chatBubble:SetHeight(h + 16)
+					
+					-- -- platexx.chatBubble:Show()
+					-- -- platexx.chatBubble.expirationTime = time() + 7
+				-- end
+				-- --nameplates:OnUpdate(platexx)
+			-- end
+		-- end
 		
 		-- if event == "CHAT_MSG_ADDON" and string.find(arg2, "TWTv4=", 1, true) then
 			-- --me.processthreatupdate(arg2)
@@ -480,6 +579,7 @@
 		
 	end)
 
+	--global onupdate
 	nameplates:SetScript("OnUpdate", function()
 		-- propagate events to all nameplates
 		if this.eventcache then
@@ -512,6 +612,54 @@
 			--print("aaa")
 			if isBalloon(v) then
 				styleBalloon(v)
+				
+				-- local strippedBalloonText = StripAllFormatting(v.textstring:GetText())
+				
+				-- --print(strippedBalloonText)
+				
+				-- local foundChatBubbleWithText = false
+				
+				-- local parentcountx = WorldFrame:GetNumChildren()
+				-- for i = 1, parentcountx do
+					-- local platexx = _G["pfNamePlate" .. i]
+					-- if platexx then
+						-- local strippedPlateText = StripAllFormatting(platexx.chatBubble.font:GetText())
+						-- -- print(strippedBalloonText)
+						-- -- print(strippedPlateText)
+						-- if strippedPlateText == strippedBalloonText and platexx.chatBubble:IsShown() and platexx.chatBubble:IsVisible() then
+							-- --store
+							-- foundChatBubbleWithText = true
+						-- end
+					-- end
+				-- end
+				
+				-- if foundChatBubbleWithText then
+					-- hideBalloon(v)
+				-- else
+					-- showBalloon(v)
+				-- end
+			
+			
+				-- local r = {v:GetRegions()}
+				-- for _, rv in pairs(r) do
+					-- if  rv:GetObjectType() == 'FontString' then
+						-- --f.textstring = v
+						-- --if a plate has this text and plate bubble is vivible then hide
+						-- --else show
+
+						-- local parentcountx = WorldFrame:GetNumChildren()
+						-- for i = 1, parentcountx do
+							-- local platexx = _G["pfNamePlate" .. i]
+							-- if platexx and platexx.chatBubble.font:GetText() == rv:GetText() and platexx.chatBubble:IsShown() then
+								-- --store
+								-- v:Hide()
+							-- else
+								-- v:Show()
+							-- end
+						-- end
+
+					-- end
+				-- end
 				--print("aaa2")
 				--v:SetDrawLayer("OVERLAY")
 				--v:SetFrameLevel(4)
@@ -532,14 +680,21 @@
 	nameplates.combat:RegisterEvent("PLAYER_ENTER_COMBAT")
 	nameplates.combat:RegisterEvent("PLAYER_LEAVE_COMBAT")
 	nameplates.combat:SetScript("OnEvent", function()
-	if event == "PLAYER_ENTER_COMBAT" then
-	  this.inCombat = 1
-	  if PlayerFrame then PlayerFrame.inCombat = 1 end
-	elseif event == "PLAYER_LEAVE_COMBAT" then
-	  this.inCombat = nil
-	  if PlayerFrame then PlayerFrame.inCombat = nil end
-	end
+		if event == "PLAYER_ENTER_COMBAT" then
+		  this.inCombat = 1
+		  if PlayerFrame then PlayerFrame.inCombat = 1 end
+		elseif event == "PLAYER_LEAVE_COMBAT" then
+		  this.inCombat = nil
+		  if PlayerFrame then PlayerFrame.inCombat = nil end
+		end
 	end)
+	
+	-- local function setPlateChatBubbleText(plate, text)
+		-- plate.chatBubble.font:SetText(text)
+		-- local h = plate.chatBubble.font:GetHeight()
+		-- plate.chatBubble:SetWidth(520)
+		-- plate.chatBubble:SetHeight(h + 16)
+	-- end
 
 nameplates.OnCreate = function(frame)
 	local parent = frame or this
@@ -568,8 +723,6 @@ nameplates.OnCreate = function(frame)
 	nameplate.original = {}
 	
 	nameplate.distanceToPlayer = 999
-	nameplate.desiredYOffset = 0
-	nameplate.currentYOffset = 0
 
 	-- create shortcuts for all known elements and disable them
 	nameplate.original.healthbar, nameplate.original.castbar = parent:GetChildren()
@@ -701,7 +854,7 @@ nameplates.OnCreate = function(frame)
 	nameplate.selectionGlow:SetVertexColor(glowr, glowg, glowb, 0.5)
 	nameplate.selectionGlow:Hide()
 
-	nameplate.level = nameplate:CreateFontString(nil, "OVERLAY")
+	nameplate.level = nameplate:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 	-- nameplate.level:SetPoint("LEFT", nameplate.health, "LEFT", 3, -8)
 	nameplate.level:SetPoint("TOP", nameplate.typeIcon, "BOTTOM", 0, 0)
 	nameplate.level:SetDrawLayer("OVERLAY")
@@ -889,8 +1042,32 @@ nameplates.OnCreate = function(frame)
 	--nameplate.castbar.icon:SetPoint("TOPLEFT", nameplate.health, "TOPRIGHT", default_border*3, 0)
 	nameplate.castbar.icon:SetWidth(nameplatesHeightcast + default_border*3 + nameplatesHeighthealth)
 	nameplate.castbar.icon:SetHeight(nameplatesHeightcast + default_border*3 + nameplatesHeighthealth)
-	CreateBackdrop(nameplate.castbar.icon, default_border)
+	CreateBackdrop(nameplate.castbar.icon, default_border)	
 	
+	-- CreateBackdrop(nameplate.chatBubble, default_border)
+	
+	-- v:GetTexture() == [[Interface\Tooltips\ChatBubble-Background]] or v:GetTexture() == [[Interface\Tooltips\ChatBubble-Backdrop]] then
+	
+	
+	-- nameplate.power.text = nameplate.power:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+	-- nameplate.power.text:SetFont(ShaguPlates.font_unit, 8, "OUTLINE")
+	-- nameplate.power.text:SetJustifyH(nameplatesHptextpos)
+	-- --nameplate.health.text:SetAllPoints()
+	-- nameplate.power.text:SetPoint("RIGHT", nameplate.power, "RIGHT", -2, -4)
+	-- nameplate.power.text:SetTextColor(1,1,1,1)
+	-- CreateBackdrop(nameplate.power, default_border)
+	
+	-- nameplate.combatIcon = CreateFrame("Frame", nil, nameplate)
+	-- nameplate.combatIcon:SetFrameLevel(0)
+	-- nameplate.combatIcon:SetPoint("LEFT", nameplate.name, "RIGHT", -0, -0)
+	-- nameplate.combatIcon:SetHeight(20)
+	-- nameplate.combatIcon:SetWidth(20)
+	-- nameplate.combatIcon.icon = nameplate.combatIcon:CreateTexture(nil, "OVERLAY")
+	-- --nameplate.rarityIconR.icon:SetTexCoord(1, 0, 0, 1)
+	-- --nameplate.combatIcon.icon:SetVertexColor(1, 1, 0, 1)
+	-- nameplate.combatIcon.icon:SetAllPoints()
+	-- nameplate.combatIcon.icon:SetTexture("Interface\\AddOns\\ShaguPlates\\img\\combat\\swords_combat_2")
+	-- nameplate.combatIcon:Hide()
 	
 
 	parent.nameplate = nameplate
@@ -1384,6 +1561,7 @@ nameplates.OnCreate = function(frame)
 				plate.typeIcon.icon:SetTexture("Interface\\AddOns\\ShaguPlates\\img\\creaturetypes\\"..string.upper(UnitCreatureType(unitstr))..".tga")
 				
 				if creatureType == "Critter" then
+					plate:SetWidth(nameplateWidthCritter + 30)
 					plate.health:SetWidth(nameplateWidthCritter)
 					plate.health:SetHeight(nameplatesHeighthealthCritter)
 					plate.health.percentage:Hide()
@@ -1391,10 +1569,11 @@ nameplates.OnCreate = function(frame)
 					plate.typeIcon:SetWidth(nameplatesHeighthealthCritter)
 					plate.power:SetWidth(nameplateWidthCritter)
 					
-					plate.selectionGlow:SetWidth(nameplateWidthCritter + 60)
+					plate.selectionGlow:SetWidth(nameplateWidthCritter + 30)
 					plate.selectionGlow:SetHeight(nameplatesHeighthealthCritter + 60)
 				else
 					if isGrayLevel then
+						plate:SetWidth(nameplateWidthGrayLevel + 60)
 						plate.health:SetWidth(nameplateWidthGrayLevel)
 						plate.power:SetWidth(nameplateWidthGrayLevel)
 						
@@ -1404,6 +1583,7 @@ nameplates.OnCreate = function(frame)
 			else
 				plate.typeIcon.icon:SetTexture("Interface\\AddOns\\ShaguPlates\\img\\creaturetypes\\UNKNOWN.tga")
 				if isGrayLevel then
+					plate:SetWidth(nameplateWidthGrayLevel + 30)
 					plate.health:SetWidth(nameplateWidthGrayLevel)
 					plate.power:SetWidth(nameplateWidthGrayLevel)
 					
@@ -1440,6 +1620,7 @@ nameplates.OnCreate = function(frame)
 		
 		if (isPlayer) then
 			if isGrayLevel then
+				plate:SetWidth(nameplateWidthGrayLevel + 30)
 				plate.health:SetWidth(nameplateWidthGrayLevel)
 				plate.power:SetWidth(nameplateWidthGrayLevel)
 			end
@@ -1568,17 +1749,7 @@ nameplates.OnCreate = function(frame)
 			plate.distanceToPlayer = 28
 		else
 			plate.distanceToPlayer = 999
-		end
-		
-		if plate.distanceToPlayer < 10 then
-			plate.desiredYOffset = -40
-		elseif plate.distanceToPlayer < 30 then
-			plate.desiredYOffset = -10
-		else
-			plate.desiredYOffset = 0
-		end
-		
-		
+		end		
 		
 		updateGuildDispaly(plate, guild)
 		
@@ -1793,169 +1964,169 @@ nameplates.OnCreate = function(frame)
 	-- local last = 0
 
 	nameplates.OnUpdate = function(frame)
-	local update
-	local frame = frame or this
-	local nameplate = frame.nameplate
-	if nameplate == nil then
-		return
-	end
-	local original = nameplate.original
-	local name = original.name:GetText()
-	local target = UnitExists("target") and frame:GetAlpha() == 1 or nil
-	local mouseover = UnitExists("mouseover") and original.glow:IsShown() or nil
-	local namefightcolor = nameplatesNamefightcolor
-
-	-- trigger queued event update
-	if nameplate.eventcache then
-	  nameplates:OnDataChanged(nameplate)
-	  nameplate.eventcache = nil
-	end
-
-	-- reset strata cache on target change
-	if nameplate.istarget ~= target then
-	  nameplate.target_strata = nil
-	end
-
-	-- keep target nameplate above others
-	if (target or nameplate.isInMouseOver) and nameplate.target_strata ~= 1 then
-	  nameplate:SetFrameStrata("LOW")
-	  nameplate.target_strata = 1
-	elseif (not target and not nameplate.isInMouseOver) and nameplate.target_strata ~= 0 then
-	  nameplate:SetFrameStrata("BACKGROUND")
-	  nameplate.target_strata = 0
-	end
-
-	-- cache target value
-	nameplate.istarget = target
-
-	-- set non-target plate alpha
-	if target or not UnitExists("target") then
-	  nameplate:SetAlpha(1)
-	else
-	  frame:SetAlpha(.95)
-	  nameplate:SetAlpha(nameplatesNotargalpha)
-	end
-
-	-- queue update on visual target update
-	if nameplate.cache.target ~= target then
-	  nameplate.cache.target = target
-	  update = true
-	end
-
-	-- queue update on visual mouseover update
-	if nameplate.cache.mouseover ~= mouseover then
-	  nameplate.cache.mouseover = mouseover
-	  update = true
-	end
-
-	-- trigger update when unit was found
-	if nameplate.wait_for_scan and GetUnitData(name, true) then
-	  nameplate.wait_for_scan = nil
-	  update = true
-	end
-
-	-- trigger update when name color changed
-	local r, g, b = original.name:GetTextColor()
-	if r + g + b ~= nameplate.cache.namecolor then
-	  nameplate.cache.namecolor = r + g + b
-
-	  if namefightcolor then
-		if r > .9 and g < .2 and b < .2 then
-		  nameplate.name:SetTextColor(1,0.4,0.2,1) -- infight
-		else
-		  nameplate.name:SetTextColor(r,g,b,1)
+		local update
+		local frame = frame or this
+		local nameplate = frame.nameplate
+		if nameplate == nil then
+			return
 		end
-	  else
-		nameplate.name:SetTextColor(1,1,1,1)
-	  end
-	  update = true
-	end
+		local original = nameplate.original
+		local name = original.name:GetText()
+		local target = UnitExists("target") and frame:GetAlpha() == 1 or nil
+		local mouseover = UnitExists("mouseover") and original.glow:IsShown() or nil
+		local namefightcolor = nameplatesNamefightcolor
 
-	local r, g, b = original.level:GetTextColor()
-	r, g, b = r + .3, g + .3, b + .3
-	if r + g + b ~= nameplate.cache.levelcolor then
-	  nameplate.cache.levelcolor = r + g + b
-	  -- nameplate.level:SetTextColor(r,g,b,1)
-	  update = true
-	end
+		-- trigger queued event update
+		if nameplate.eventcache then
+		  nameplates:OnDataChanged(nameplate)
+		  nameplate.eventcache = nil
+		end
 
-	-- scan for debuff timeouts
-	if nameplate.debuffcache then
-	  for id, data in pairs(nameplate.debuffcache) do
-		if ( not data.stop or data.stop < GetTime() ) and not data.empty then
-		  data.empty = true
+		-- reset strata cache on target change
+		if nameplate.istarget ~= target then
+		  nameplate.target_strata = nil
+		end
+
+		-- keep target nameplate above others
+		if (target or nameplate.isInMouseOver) and nameplate.target_strata ~= 1 then
+		  nameplate:SetFrameStrata("LOW")
+		  nameplate.target_strata = 1
+		elseif (not target and not nameplate.isInMouseOver) and nameplate.target_strata ~= 0 then
+		  nameplate:SetFrameStrata("BACKGROUND")
+		  nameplate.target_strata = 0
+		end
+
+		-- cache target value
+		nameplate.istarget = target
+
+		-- set non-target plate alpha
+		if target or not UnitExists("target") then
+		  nameplate:SetAlpha(1)
+		else
+		  frame:SetAlpha(.95)
+		  nameplate:SetAlpha(nameplatesNotargalpha)
+		end
+
+		-- queue update on visual target update
+		if nameplate.cache.target ~= target then
+		  nameplate.cache.target = target
 		  update = true
 		end
-	  end
-	end
 
-	-- use timer based updates
-	if not nameplate.tick or nameplate.tick < GetTime() then
-	  update = true
-	end
-
-	-- if (GetActivePlateCount() > 10) then
-		-- if tonumber(nameplate.level:GetText()) > 30 then
-			-- nameplate:Show()
-		-- else
-			-- nameplate:Hide()
-		-- end
-	-- else
-		-- nameplate:Show()
-	-- end
-
-	-- run full updates if required
-	if update then
-	  nameplates:OnDataChanged(nameplate)
-	  if (GetActivePlateCount() < 25) then
-		nameplate.tick = GetTime() + .1
-	  elseif  (GetActivePlateCount() < 40) then
-		nameplate.tick = GetTime() + .5
-	  else
-		nameplate.tick = GetTime() + 1
-	  end
-	  --nameplate.tick = GetTime() + .5
-	end
-
-	-- castbar update
-	if true then
-	  local channel, cast, nameSubtext, text, texture, startTime, endTime, isTradeSkill
-
-	  -- detect cast or channel bars
-	  cast, nameSubtext, text, texture, startTime, endTime, isTradeSkill = UnitCastingInfo(target and "target" or name)
-	  if not cast then channel, nameSubtext, text, texture, startTime, endTime, isTradeSkill = UnitChannelInfo(target and "target" or name) end
-
-	  -- read enemy casts from SuperWoW if enabled
-	  if superwow_active then
-		cast, nameSubtext, text, texture, startTime, endTime, isTradeSkill = UnitCastingInfo(nameplate.parent:GetName(1))
-		if not cast then channel, nameSubtext, text, texture, startTime, endTime, isTradeSkill = UnitChannelInfo(nameplate.parent:GetName(1)) end
-	  end
-
-	  if not cast and not channel then
-		nameplate.castbar:Hide()
-	  elseif cast or channel then
-		local effect = cast or channel
-		local duration = endTime - startTime
-		local max = duration / 1000
-		local cur = GetTime() - startTime / 1000
-
-		-- invert castbar values while channeling
-		if channel then cur = max + startTime/1000 - GetTime() end
-
-		nameplate.castbar:SetMinMaxValues(0,  duration/1000)
-		nameplate.castbar:SetValue(cur)
-		nameplate.castbar.text:SetText(round(cur,1))
-		nameplate.castbar.spell:SetText(effect)
-		nameplate.castbar:Show()
-
-		if texture then
-		  nameplate.castbar.icon.tex:SetTexture(texture)
-		  nameplate.castbar.icon.tex:SetTexCoord(.1,.9,.1,.9)
+		-- queue update on visual mouseover update
+		if nameplate.cache.mouseover ~= mouseover then
+		  nameplate.cache.mouseover = mouseover
+		  update = true
 		end
-	  end
-	else
-	  nameplate.castbar:Hide()
-	end
+
+		-- trigger update when unit was found
+		if nameplate.wait_for_scan and GetUnitData(name, true) then
+		  nameplate.wait_for_scan = nil
+		  update = true
+		end
+
+		-- trigger update when name color changed
+		local r, g, b = original.name:GetTextColor()
+		if r + g + b ~= nameplate.cache.namecolor then
+		  nameplate.cache.namecolor = r + g + b
+
+		  if namefightcolor then
+			if r > .9 and g < .2 and b < .2 then
+			  nameplate.name:SetTextColor(1,0.4,0.2,1) -- infight
+			else
+			  nameplate.name:SetTextColor(r,g,b,1)
+			end
+		  else
+			nameplate.name:SetTextColor(1,1,1,1)
+		  end
+		  update = true
+		end
+
+		local r, g, b = original.level:GetTextColor()
+		r, g, b = r + .3, g + .3, b + .3
+		if r + g + b ~= nameplate.cache.levelcolor then
+		  nameplate.cache.levelcolor = r + g + b
+		  -- nameplate.level:SetTextColor(r,g,b,1)
+		  update = true
+		end
+
+		-- scan for debuff timeouts
+		if nameplate.debuffcache then
+		  for id, data in pairs(nameplate.debuffcache) do
+			if ( not data.stop or data.stop < GetTime() ) and not data.empty then
+			  data.empty = true
+			  update = true
+			end
+		  end
+		end
+
+		-- use timer based updates
+		if not nameplate.tick or nameplate.tick < GetTime() then
+		  update = true
+		end
+
+		-- if (GetActivePlateCount() > 10) then
+			-- if tonumber(nameplate.level:GetText()) > 30 then
+				-- nameplate:Show()
+			-- else
+				-- nameplate:Hide()
+			-- end
+		-- else
+			-- nameplate:Show()
+		-- end
+
+		-- run full updates if required
+		if update then
+		  nameplates:OnDataChanged(nameplate)
+		  if (GetActivePlateCount() < 25) then
+			nameplate.tick = GetTime() + .1
+		  elseif  (GetActivePlateCount() < 40) then
+			nameplate.tick = GetTime() + .5
+		  else
+			nameplate.tick = GetTime() + 1
+		  end
+		  --nameplate.tick = GetTime() + .5
+		end
+
+		-- castbar update
+		if true then
+		  local channel, cast, nameSubtext, text, texture, startTime, endTime, isTradeSkill
+
+		  -- detect cast or channel bars
+		  cast, nameSubtext, text, texture, startTime, endTime, isTradeSkill = UnitCastingInfo(target and "target" or name)
+		  if not cast then channel, nameSubtext, text, texture, startTime, endTime, isTradeSkill = UnitChannelInfo(target and "target" or name) end
+
+		  -- read enemy casts from SuperWoW if enabled
+		  if superwow_active then
+			cast, nameSubtext, text, texture, startTime, endTime, isTradeSkill = UnitCastingInfo(nameplate.parent:GetName(1))
+			if not cast then channel, nameSubtext, text, texture, startTime, endTime, isTradeSkill = UnitChannelInfo(nameplate.parent:GetName(1)) end
+		  end
+
+		  if not cast and not channel then
+			nameplate.castbar:Hide()
+		  elseif cast or channel then
+			local effect = cast or channel
+			local duration = endTime - startTime
+			local max = duration / 1000
+			local cur = GetTime() - startTime / 1000
+
+			-- invert castbar values while channeling
+			if channel then cur = max + startTime/1000 - GetTime() end
+
+			nameplate.castbar:SetMinMaxValues(0,  duration/1000)
+			nameplate.castbar:SetValue(cur)
+			nameplate.castbar.text:SetText(round(cur,1))
+			nameplate.castbar.spell:SetText(effect)
+			nameplate.castbar:Show()
+
+			if texture then
+			  nameplate.castbar.icon.tex:SetTexture(texture)
+			  nameplate.castbar.icon.tex:SetTexCoord(.1,.9,.1,.9)
+			end
+		  end
+		else
+		  nameplate.castbar:Hide()
+		end
 
 	end
 
@@ -2015,79 +2186,25 @@ nameplates.OnCreate = function(frame)
 		  -- initialize shortcut variables
 		  
 			local plate = this.nameplate or this
-		  
-			-- last = last + arg1
-			-- if last >= 1 then
-				-- last = 0
-				-- --print("arg1"..arg1)
-			-- end
-			
-			-- if this:GetWidth() > 100 then
-					-- this:SetWidth(100)
-				-- end
-
-				-- if this:GetHeight() > 10 then
-					-- this:SetHeight(10)
-				-- end
-
-				--if (GetActivePlateCount() > 10) then
-				-- if (GetActivePlateCount() > 1) then
-					-- this:SetWidth(10)
-					-- this:SetHeight(10)
-				-- else
-					-- if this:GetWidth() == 10 and this:GetHeight() == 10 then
-						-- this:SetWidth(80)
-						-- this:SetHeight(10)
-					-- end
-				-- end
 
 			this:SetWidth(1)
 			this:SetHeight(1)
-
-			-- if plate.desiredYOffset and plate.currentYOffset then
-				-- --print("GetCameraZoom(): "..GetCameraZoom())
-
-
-				-- local offsetAnimationStep = 1.0
-				
-				-- if math.abs(plate.desiredYOffset-plate.currentYOffset) > 30 then
-					-- plate.currentYOffset = plate.desiredYOffset
-				-- end
-
-				-- if (math.abs(plate.desiredYOffset-plate.currentYOffset) <= offsetAnimationStep) then
-					-- plate.currentYOffset = plate.desiredYOffset
-				-- else
-					
-				-- end
-				
-				-- if plate.desiredYOffset-plate.currentYOffset > 0 then
-					-- plate.currentYOffset = plate.currentYOffset + offsetAnimationStep
-				-- elseif plate.desiredYOffset-plate.currentYOffset < 0 then
-					-- plate.currentYOffset = plate.currentYOffset - offsetAnimationStep
-				-- end
-				
-				-- --sync position (frequently)
-				-- plate:SetPoint("TOP", plate.parent, "TOP", 0, plate.currentYOffset)
-			-- else
-				-- --sync position (frequently)
-				-- plate:SetPoint("TOP", plate.parent, "TOP", 0, 0)
-			-- end
 			
-			plate:SetPoint("TOP", plate.parent, "TOP", 0, 0)
+			-- local x, y = plate:GetCenter()
+			-- --local x, y = plate:GetBottom()
+            -- if y then
+                -- -- local level = math.floor(y)
+				-- local level = math.floor(y / 2)
+				-- if level < 1 then level = 1 end
+				-- if level > 5000 then level = 5000 end
 
-			-- local zoom = GetCameraZoom()
-
-			--plate:SetPoint("TOP", plate.parent, "TOP", 0, nameplateOffsetY)
-			-- print("zoom")
-			-- print("zoom: "..zoom)
-
-			-- plate:SetPoint("TOP", plate.parent, "TOP", 0, -40)
-
-			--this.nameplate:SetPoint("BOTTOM", this, "TOP", 0, 0)
-
-			--this.nameplate:SetPoint("TOP", this, "TOP", 0, 0)
-
-			--this.nameplate:SetPoint("TOP", self, "TOP", 0, 0)
+                -- this:SetFrameLevel(level)
+				-- -- this.level:SetFrameLevel(level)
+				-- -- this.level:SetFrameLevel(level)
+				-- -- this.name:SetFrameLevel(level)
+            -- end
+			
+			--plate:SetPoint("TOP", plate.parent, "TOP", 0, -50)
 
 		  hookOnUpdate(self)
 		end
