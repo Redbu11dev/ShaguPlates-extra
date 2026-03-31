@@ -1149,7 +1149,7 @@ nameplates.OnCreate = function(frame)
 	local isGrayLevel = levelDifficultyColor.r == 0.5 and levelDifficultyColor.g == 0.5 and levelDifficultyColor.b == 0.5
 	local class, ulevel, elite, player, guild = GetUnitData(name, true)
 	local target = plate.istarget
-	local mouseover = UnitExists("mouseover")
+	local mouseover = UnitExists("mouseover") and plate.original.glow:IsShown() or nil
 	local unitstr = target and "target" or mouseover and "mouseover" or nil
 	--local red, green, blue = plate.original.healthbar:GetStatusBarColor()
 	--local unittype = GetUnitType(red, green, blue) or "ENEMY_NPC"
@@ -2100,6 +2100,21 @@ nameplates.OnCreate = function(frame)
 		  if superwow_active then
 			cast, nameSubtext, text, texture, startTime, endTime, isTradeSkill = UnitCastingInfo(nameplate.parent:GetName(1))
 			if not cast then channel, nameSubtext, text, texture, startTime, endTime, isTradeSkill = UnitChannelInfo(nameplate.parent:GetName(1)) end
+		  end
+
+		  -- without SuperWoW, casts are tracked by mob name only, so all plates
+		  -- sharing a name would incorrectly show the same castbar; restrict
+		  -- castbar display to target/mouseover or unambiguous (single) plates
+		  if not superwow_active and (cast or channel) and not target and not mouseover then
+			for other_parent in pairs(registry) do
+			  if other_parent ~= nameplate.parent and other_parent:IsVisible() then
+				local other_np = other_parent.nameplate
+				if other_np and other_np.original and other_np.original.name:GetText() == name then
+				  cast, channel = nil, nil
+				  break
+				end
+			  end
+			end
 		  end
 
 		  if not cast and not channel then
