@@ -289,7 +289,11 @@
 	
 	
 	local updateCustomBalloonText = function(f, text)	
-		local minHeight = 40
+		if f.chatBubble.font:GetText() == text then
+			return nil
+		end
+	
+		local minHeight = 20
 	
 		local minWidth = 50
 		local maxWidth = 300
@@ -309,17 +313,21 @@
 	
 	  local r = {f:GetRegions()}
 	  for _, v in pairs(r) do
-		  if  v:GetObjectType() == 'Texture' then
-			  --v:SetDrawLayer'OVERLAY'
-			  if  v:GetTexture() == [[Interface\Tooltips\ChatBubble-Background]] or v:GetTexture() == [[Interface\Tooltips\ChatBubble-Backdrop]] then
-				  --v:SetTexture''
-				-- DoNothing()
-			  elseif (v:GetTexture() == [[Interface\Tooltips\ChatBubble-Tail]]) then
-				--print("asdasdasd")
-				--v:SetTexture("")
-			  end
-		  elseif  v:GetObjectType() == 'FontString' then
+		  -- if  v:GetObjectType() == 'Texture' then
+			  -- --v:SetDrawLayer'OVERLAY'
+			  -- if  v:GetTexture() == [[Interface\Tooltips\ChatBubble-Background]] or v:GetTexture() == [[Interface\Tooltips\ChatBubble-Backdrop]] then
+				  -- --v:SetTexture''
+				-- -- DoNothing()
+			  -- elseif (v:GetTexture() == [[Interface\Tooltips\ChatBubble-Tail]]) then
+				-- --print("asdasdasd")
+				-- --v:SetTexture("")
+			  -- end
+		  -- elseif  v:GetObjectType() == 'FontString' then
+			  -- f.textstring = v
+		  -- end
+		  if  v:GetObjectType() == 'FontString' then
 			  f.textstring = v
+			  break
 		  end
 	  end
 	  -- if not string.find(f.textstring:GetText(), "\n\n\n\n") then
@@ -384,7 +392,7 @@
 		f.chatBubble.tail:SetTexture("Interface/Tooltips/ChatBubble-Tail")
 		f.chatBubble.tail:SetWidth(24)
 		f.chatBubble.tail:SetHeight(18)
-		f.chatBubble.tail:SetPoint("TOP", f.chatBubble, "BOTTOM", -20, 4)
+		f.chatBubble.tail:SetPoint("TOP", f.chatBubble, "BOTTOM", -10, 4)
 		f.chatBubble:Show()
 	  
 		-- OffsetBubble(f, 50)
@@ -419,10 +427,13 @@
 		f:SetFrameStrata("LOW")
 		--f:SetFrameStrata("BACKGROUND")
 		
+		-- updateCustomBalloonText(f, f.textstring:GetText())
+		--f:SetFrameLevel(10000)
+		
 		f.skinned = true
 	  end
 	  updateCustomBalloonText(f, f.textstring:GetText())
-	  f:SetFrameLevel(10000)
+	  -- f:SetFrameLevel(10000)
 	  
 	end
 
@@ -1089,6 +1100,33 @@ nameplates.OnCreate = function(frame)
 	  nameplate.health:SetPoint("TOP", nameplate.name, "BOTTOM", 0, healthoffset)
 	end
 	
+	--local unitstr = nameplate.parent:GetName(1)
+	
+	-- local success, err = pcall(function()
+		-- -- Your risky code here
+		-- local name = nameplate.original.name:GetText()
+		-- if UnitIsPlayer(name) then
+			-- SetPlayerHealthStatusBarColor(name, nameplate)
+		-- end
+	-- end)
+	-- if not success then
+		-- -- Handle the error silently or log it
+		-- -- print("Error caught: " .. err)
+	-- end
+	
+	local success, err = pcall(function()
+		-- Your risky code here
+		local name = nameplate.original.name:GetText()
+		if UnitIsPlayer(name) then
+			SetPlayerHealthStatusBarColor(name, nameplate)
+			nameplate.healthColorIsInitiallySet = true
+		end
+	end)
+	if not success then
+		-- Handle the error silently or log it
+		-- print("Error caught: " .. err)
+	end
+	
 	-- nameplates:OnDataChanged(nameplate)
 	-- nameplates:OnUpdate(parent)
 	nameplates.OnShow(parent)
@@ -1173,23 +1211,31 @@ nameplates.OnCreate = function(frame)
 	--print("unitstr = plate.parent:GetName(1): "..plate.parent:GetName(1))
 
 	-- use superwow unit guid as unitstr if possible
-	if superwow_active then
-		unitstr = plate.parent:GetName(1)
-	end
+	-- if superwow_active then
+		-- unitstr = plate.parent:GetName(1)
+	-- end
+	
+	--superwow
+	unitstr = plate.parent:GetName(1)
 	
 	local originalPlateName = plate.original.name:GetText()
 	local originalPlateLevel = level
 	
 	-- target event sometimes fires too quickly, where nameplate identifiers are not
 	-- yet updated. So while being inside this event, we cannot trust the unitstr.
-	if event == "PLAYER_TARGET_CHANGED" then unitstr = nil end
+	--if event == "PLAYER_TARGET_CHANGED" then unitstr = nil end
 	
 	
 	-----------
 	local isPlayer = (player ~= nil)
+	if player and unitstr == nil then
+		unitstr = name
+	end
 	if (unitstr ~= nil) then
 		isPlayer = UnitIsPlayer(unitstr)
 	end
+	
+	--SetPlayerHealthStatusBarColor(unitstr, plate)
 	
 	elite = plate.original.levelicon:IsShown() and not isPlayer and "boss" or elite	
 	
@@ -1210,7 +1256,16 @@ nameplates.OnCreate = function(frame)
 	
 	if isPlayer then
 		if not class then
-			plate.wait_for_scan = true
+			--plate.wait_for_scan = true
+			local success, err = pcall(function()
+				-- Your risky code here
+				local className, classFilename = UnitClass(unitstr)
+				class = ""..classFilename
+			end)
+			if not success then
+				-- Handle the error silently or log it
+				-- print("Error caught: " .. err)
+			end
 		end
 		
 		if (unitstr ~= nil) then
@@ -1482,7 +1537,9 @@ nameplates.OnCreate = function(frame)
 		plate.health:SetPoint("TOP", plate.name, "BOTTOM", 0, healthoffset)
 		plate.health:SetWidth(nameplateWidth)
 		plate.health:SetHeight(nameplatesHeighthealth)
-		plate.health:SetStatusBarColor(redOriginal, greenOriginal, blueOriginal, 0.99999779462814)
+		if not plate.healthColorIsInitiallySet then
+			plate.health:SetStatusBarColor(redOriginal, greenOriginal, blueOriginal, 0.99999779462814)
+		end
 		plate.health.text:ClearAllPoints()
 		plate.health.text:SetPoint("RIGHT", plate.health, "RIGHT", -2, -8)
 		plate.health:Show()		
@@ -1513,11 +1570,31 @@ nameplates.OnCreate = function(frame)
 		plate.rarityIcon:SetPoint("RIGHT", plate.health, "LEFT", 26, -1)
 		
 		updateGuildDispaly(plate, guild)
+		
+		local success, err = pcall(function()
+			-- Your risky code here
+			local unitstr = plate.parent:GetName(1)
+			if not unitstr then
+				unitstr = name
+			end
+			if UnitIsPlayer(unitstr) then
+				SetPlayerHealthStatusBarColor(unitstr, plate)
+			end
+		end)
+		if not success then
+			-- Handle the error silently or log it
+			-- print("Error caught: " .. err)
+		end
+		
 	end	
 	-------------
 	
-	if plate.wait_for_scan then
+	if not isPlayer and plate.wait_for_scan then
 		return
+	end
+	
+	if isPlayer and not unitstr then
+		unitstr = name
 	end
 	
 	------------- SCANNED DISPLAY
@@ -1629,6 +1706,9 @@ nameplates.OnCreate = function(frame)
 			plate.classIcon.icon:SetTexCoord(classr, classl, classt, classb)
 			--plate.classIcon.icon:SetTexCoord(.078, .92, .079, .937)
 			plate.classIcon:Show()
+			if not class then
+				plate.classIcon.icon:SetTexture("Interface\\AddOns\\ShaguPlates\\img\\loading.tga")
+			end
 			
 			--print(name)
 			--print(raceEn)
@@ -1641,43 +1721,7 @@ nameplates.OnCreate = function(frame)
 				plate.typeIcon.icon:SetTexture("Interface\\AddOns\\ShaguPlates\\img\\races\\"..string.lower(raceEn).."_male.tga")
 			end
 			
-			if (not (UnitInRaid(unitstr) or UnitInParty(unitstr))) then 
-				--r, g, b = UnitSelectionColor(unitstr)
-				--r, g, b, a = UnitSelectionColor(unitstr)	
-				
-				--print(name)
-				--print(UnitIsPVP(unitstr))
-				--print(UnitCanAttack("player", unitstr))
-
-				--r, g, b = 1, 1, 0
-				
-				local playerCanAttackUnit = UnitCanAttack("player", unitstr)
-				local unitCanAttackPlayer = UnitCanAttack(unitstr, "player")
-				local playerFaction = UnitFactionGroup("player")
-				local unitFaction = UnitFactionGroup(unitstr)
-				local playerIsPvP = UnitIsPVP("player")
-				local unitIsPvP = UnitIsPVP(unitstr)
-				
-				if (playerCanAttackUnit) and (not UnitCanAttackPlayer) then
-					plate.health:SetStatusBarColor(1, 1, 0, 0.99999779462814)
-				elseif (not playerCanAttackUnit) and (not unitCanAttackPlayer) then
-					if (playerFaction == unitFaction) and (unitIsPvP) then
-						plate.health:SetStatusBarColor(0, 0.99999779462814, 0, 0.99999779462814)
-					else
-						plate.health:SetStatusBarColor(0, 0, 0.99999779462814, 0.99999779462814)
-					end
-				elseif (not playerCanAttackUnit) and (unitCanAttackPlayer) then
-					if ((playerFaction ~= unitFaction)) and (playerIsPvP) then
-						plate.health:SetStatusBarColor(0, 0, 0.99999779462814, 0.99999779462814)
-					end
-				else
-					--TODO UNHANDLED
-					plate.health:SetStatusBarColor(1, 1, 1, 0.99999779462814)
-				end
-			else
-				--unit is in your party or raid
-				plate.health:SetStatusBarColor(0.4, 0.6, 1, 0.99999779462814)
-			end
+			SetPlayerHealthStatusBarColor(unitstr, plate)
 		end
 		
 		
@@ -1957,6 +2001,48 @@ nameplates.OnCreate = function(frame)
 	 -- plate.cache.r, plate.cache.g, plate.cache.b = r, g, b
 	-- end
 
+	end
+	
+	----------------
+	
+	function SetPlayerHealthStatusBarColor(unitstr, plate)
+		if (not (UnitInRaid(unitstr) or UnitInParty(unitstr))) then 
+			--r, g, b = UnitSelectionColor(unitstr)
+			--r, g, b, a = UnitSelectionColor(unitstr)	
+			
+			--print(name)
+			--print(UnitIsPVP(unitstr))
+			--print(UnitCanAttack("player", unitstr))
+
+			--r, g, b = 1, 1, 0
+			
+			local playerCanAttackUnit = UnitCanAttack("player", unitstr)
+			local unitCanAttackPlayer = UnitCanAttack(unitstr, "player")
+			local playerFaction = UnitFactionGroup("player")
+			local unitFaction = UnitFactionGroup(unitstr)
+			local playerIsPvP = UnitIsPVP("player")
+			local unitIsPvP = UnitIsPVP(unitstr)
+			
+			if (playerCanAttackUnit) and (not UnitCanAttackPlayer) then
+				plate.health:SetStatusBarColor(1, 1, 0, 0.99999779462814)
+			elseif (not playerCanAttackUnit) and (not unitCanAttackPlayer) then
+				if (playerFaction == unitFaction) and (unitIsPvP) then
+					plate.health:SetStatusBarColor(0, 0.99999779462814, 0, 0.99999779462814)
+				else
+					plate.health:SetStatusBarColor(0, 0, 0.99999779462814, 0.99999779462814)
+				end
+			elseif (not playerCanAttackUnit) and (unitCanAttackPlayer) then
+				if ((playerFaction ~= unitFaction)) and (playerIsPvP) then
+					plate.health:SetStatusBarColor(0, 0, 0.99999779462814, 0.99999779462814)
+				end
+			else
+				--TODO UNHANDLED
+				plate.health:SetStatusBarColor(1, 1, 1, 0.99999779462814)
+			end
+		else
+			--unit is in your party or raid
+			plate.health:SetStatusBarColor(0.4, 0.6, 1, 0.99999779462814)
+		end
 	end
 
 	-----------------------------------------------

@@ -2,6 +2,9 @@
 -- https://github.com/balakethelock/SuperWoW
 
 ShaguPlates:RegisterModule("superwow", "vanilla", function ()
+	superwow_active = true
+
+
   if SetAutoloot and SpellInfo and not SUPERWOW_VERSION then
     -- Turn every enchanting link that we create in the enchanting frame,
     -- from "spell:" back into "enchant:". The enchant-version is what is
@@ -32,7 +35,7 @@ ShaguPlates:RegisterModule("superwow", "vanilla", function ()
     DEFAULT_CHAT_FRAME:AddMessage("-> https://github.com/balakethelock/SuperWoW/releases/")
   end
 
-  if SUPERWOW_VERSION == "1.5" then
+  if SUPERWOW_VERSION == "1.5" or SUPERWOW_VERSION == "1.5.1" then
     QueueFunction(function()
       local pfCombatText_AddMessage = _G.CombatText_AddMessage
       _G.CombatText_AddMessage = function(message, a, b, c, d, e, f)
