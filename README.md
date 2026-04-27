@@ -1,3 +1,6 @@
+(!) This version is discontinued for now, new continued version is here: https://github.com/Redbu11dev/UnitPlates-wotlk/tree/main
+
+
 (!) Rename folder to "ShaguPlates" for now (!)
 
 (!) I do not and do not plan to support non-english locales (!)
