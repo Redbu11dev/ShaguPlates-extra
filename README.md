@@ -1,4 +1,7 @@
 
+DISCONTINUED IN FAVOR OF TOTAL REWRITE AND OVERALL BETTER QUALITY ADDON: https://github.com/Redbu11dev/UnitPlates
+
+
 (!) Rename folder to "ShaguPlates" for now (!)
 
 (!) I do not and do not plan to support non-english locales (!)
